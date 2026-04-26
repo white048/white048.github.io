@@ -3,29 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>[YOUR NAME] - Portfolio</title>
+  <title>董一均 | Game Design & Development Portfolio</title>
+  <meta name="description" content="Portfolio of Dong Yijun — Game Designer & Developer specializing in C++ game programming, system design, and JRPG analysis." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
+  <!-- ═══ LIGHTBOX ═══ -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+    <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+    <button class="lb-prev" id="lbPrev" aria-label="Previous">&#8249;</button>
+    <button class="lb-next" id="lbNext" aria-label="Next">&#8250;</button>
+    <div class="lb-img-wrap">
+      <img id="lbImg" src="" alt="" />
+    </div>
+    <p class="lb-caption" id="lbCaption"></p>
+  </div>
+
   <!-- ═══ NAVIGATION ═══ -->
   <nav class="navbar" id="navbar">
     <div class="nav-inner">
-      <a class="nav-logo" href="#hero">[YOUR NAME]</a>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+      <a class="nav-logo" href="#hero">DYJ<span class="logo-dot">.</span></a>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
       <ul class="nav-links" id="navLinks">
-        <li><a href="#about" data-i18n="nav.about">About</a></li>
-        <li><a href="#skills" data-i18n="nav.skills">Skills</a></li>
-        <li><a href="#works" data-i18n="nav.works">Works</a></li>
+        <li><a href="#about"   data-i18n="nav.about">About</a></li>
+        <li><a href="#skills"  data-i18n="nav.skills">Skills</a></li>
+        <li><a href="#works"   data-i18n="nav.works">Works</a></li>
+        <li><a href="#art"     data-i18n="nav.art">Art</a></li>
         <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
       </ul>
       <button class="lang-toggle" id="langToggle" aria-label="Switch language">
-        <span class="lang-en">EN</span>
+        <span class="lang-en lang-active">EN</span>
         <span class="lang-sep">|</span>
         <span class="lang-zh">中</span>
       </button>
@@ -34,69 +47,42 @@
 
   <!-- ═══ HERO ═══ -->
   <section class="hero" id="hero">
-    <svg class="deco deco--tl" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="2" width="60" height="60" stroke="currentColor" stroke-width="2.5"/>
-      <rect x="18" y="18" width="60" height="60" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4"/>
-      <circle cx="2" cy="2" r="3" fill="currentColor"/>
-      <circle cx="62" cy="2" r="3" fill="currentColor"/>
-      <circle cx="2" cy="62" r="3" fill="currentColor"/>
-    </svg>
-    <svg class="deco deco--br" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="58" y="58" width="60" height="60" stroke="currentColor" stroke-width="2.5"/>
-      <rect x="42" y="42" width="60" height="60" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4"/>
-      <circle cx="118" cy="118" r="3" fill="currentColor"/>
-      <circle cx="58" cy="118" r="3" fill="currentColor"/>
-      <circle cx="118" cy="58" r="3" fill="currentColor"/>
-    </svg>
-
-    <svg class="star star--1" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" fill="currentColor"/></svg>
-    <svg class="star star--2" viewBox="0 0 16 16"><path d="M8 1l1.6 4.9H15l-4.1 3 1.6 4.9L8 11.3l-4.1 2.5L5.5 8.9 1.4 5.9h5.4z" fill="currentColor"/></svg>
-    <svg class="star star--3" viewBox="0 0 12 12"><path d="M6 0.5l1.2 3.7H11l-3.1 2.3 1.2 3.7L6 8.2l-3.1 1.9 1.2-3.7L1 4.2h3.8z" fill="currentColor"/></svg>
-
+    <div class="hero-grid-bg" aria-hidden="true"></div>
+    <div class="hero-glow" aria-hidden="true"></div>
     <div class="hero-content">
       <p class="hero-eyebrow" data-i18n="hero.eyebrow">Hello, I'm</p>
-      <h1 class="hero-name">[YOUR NAME]</h1>
-      <div class="hero-divider">
-        <span class="divider-line"></span>
-        <svg viewBox="0 0 20 20" width="16"><path d="M10 1l2 6h6l-5 3.6 2 6L10 13l-5 3.6 2-6L2 7h6z" fill="currentColor"/></svg>
-        <span class="divider-line"></span>
+      <h1 class="hero-name">
+        Dong Yijun
+        <span class="hero-name-cn">董一均</span>
+      </h1>
+      <p class="hero-role">Game Designer &amp; Developer</p>
+      <p class="hero-tags">System Design &nbsp;·&nbsp; C++ &nbsp;·&nbsp; JRPG Enthusiast</p>
+      <div class="hero-actions">
+        <a href="#works" class="btn-primary" data-i18n="hero.cta">View Works</a>
+        <a href="#contact" class="btn-outline" data-i18n="hero.contact">Get in Touch</a>
       </div>
-      <p class="hero-role">[YOUR ROLE / TAGLINE]</p>
-      <a href="#works" class="btn-primary" data-i18n="hero.cta">View Works &darr;</a>
+    </div>
+    <div class="hero-scroll-hint" aria-hidden="true">
+      <span></span>
     </div>
   </section>
 
   <!-- ═══ ABOUT ═══ -->
   <section class="section" id="about">
     <div class="container">
-      <h2 class="section-title">
-        <span class="title-deco"></span>
-        <span data-i18n="about.title">About Me</span>
-        <span class="title-deco"></span>
-      </h2>
-      <div class="about-grid">
-        <div class="about-avatar">
-          <div class="avatar-frame">
-            <img src="assets/avatar.jpg" alt="Avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
-            <div class="avatar-placeholder">
-              <svg viewBox="0 0 80 80" width="60"><circle cx="40" cy="30" r="18" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M8 72c0-17.7 14.3-32 32-32s32 14.3 32 32" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
-            </div>
-          </div>
-          <div class="avatar-tag">[YOUR NAME]</div>
-        </div>
-        <div class="about-text">
-          <p class="about-bio" data-i18n="about.bio1">
-            [YOUR BIO — Introduce yourself in 2–4 sentences: who you are, what you do, what you're passionate about.]
-          </p>
-          <p class="about-bio" data-i18n="about.bio2">
-            [Continue with your background, experience, or interests.]
-          </p>
-          <div class="about-tags">
-            <span class="tag">[Location]</span>
-            <span class="tag">[University / Company]</span>
-            <span class="tag">[Interest 1]</span>
-            <span class="tag">[Interest 2]</span>
-          </div>
+      <h2 class="section-title" data-i18n="about.title">About Me</h2>
+      <div class="about-body">
+        <p class="about-bio" data-i18n="about.bio">
+          MSc Computer Game Engineering student at Newcastle University, graduating September 2026. I combine game system design thinking with hands-on C++ programming ability. Passionate about JRPG combat systems, turn-based numerical design, and gacha/live-service game operations. I've independently built 3D game prototypes with physics interaction, AI behavior systems, and networked multiplayer, as well as real-time PBR/IBL rendering pipelines. I also draw anime-style illustrations in Photoshop and do beginner-level 3D modeling in Blender.
+        </p>
+        <div class="about-tags">
+          <span class="tag">Newcastle University</span>
+          <span class="tag">MSc Game Engineering</span>
+          <span class="tag">C++</span>
+          <span class="tag">System Design</span>
+          <span class="tag">JRPG</span>
+          <span class="tag">二次元</span>
+          <span class="tag" data-i18n="about.location">Newcastle &amp; Chengdu</span>
         </div>
       </div>
     </div>
@@ -105,65 +91,79 @@
   <!-- ═══ SKILLS ═══ -->
   <section class="section section--alt" id="skills">
     <div class="container">
-      <h2 class="section-title">
-        <span class="title-deco"></span>
-        <span data-i18n="skills.title">Skills</span>
-        <span class="title-deco"></span>
-      </h2>
-      <div class="skills-groups">
+      <h2 class="section-title" data-i18n="skills.title">Skills</h2>
+      <div class="skills-grid">
 
         <div class="skill-group reveal">
-          <h3 class="skill-group-title" data-i18n="skills.frontend">Frontend</h3>
-          <div class="skill-cards">
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">🌐</text></svg>
-              <span>HTML / CSS</span>
-            </div>
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">⚡</text></svg>
-              <span>JavaScript</span>
-            </div>
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">⚛️</text></svg>
-              <span>[Framework]</span>
-            </div>
+          <div class="skill-group-header">
+            <span class="skill-group-icon">&#9001;</span>
+            <h3 data-i18n="skills.gamedev">Game Development</h3>
           </div>
+          <ul class="skill-list">
+            <li>
+              <span class="skill-name">C++</span>
+              <span class="skill-desc" data-i18n="sk.cpp">Primary language — all coursework projects built solo</span>
+            </li>
+            <li>
+              <span class="skill-name">Unity / C#</span>
+              <span class="skill-desc" data-i18n="sk.unity">Used in undergraduate thesis, familiar with core workflow</span>
+            </li>
+            <li>
+              <span class="skill-name">Game Loop / State Machine / Interaction System</span>
+            </li>
+          </ul>
         </div>
 
         <div class="skill-group reveal">
-          <h3 class="skill-group-title" data-i18n="skills.backend">Backend</h3>
-          <div class="skill-cards">
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">🖥️</text></svg>
-              <span>[Language]</span>
-            </div>
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">🗄️</text></svg>
-              <span>[Database]</span>
-            </div>
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">🔧</text></svg>
-              <span>[Framework]</span>
-            </div>
+          <div class="skill-group-header">
+            <span class="skill-group-icon">&#9002;</span>
+            <h3 data-i18n="skills.engine">Engine Systems</h3>
           </div>
+          <ul class="skill-list">
+            <li>
+              <span class="skill-name">Physics</span>
+              <span class="skill-desc" data-i18n="sk.physics">Broad/Narrow Phase Collision Detection, Jolt Physics</span>
+            </li>
+            <li>
+              <span class="skill-name">AI</span>
+              <span class="skill-desc" data-i18n="sk.ai">FSM, Behavior Tree, A* Pathfinding</span>
+            </li>
+            <li>
+              <span class="skill-name">Networking</span>
+              <span class="skill-desc" data-i18n="sk.net">Server-authoritative sync, Snapshot interpolation (ENet/UDP)</span>
+            </li>
+            <li>
+              <span class="skill-name">Graphics</span>
+              <span class="skill-desc" data-i18n="sk.gfx">PBR (Cook-Torrance), IBL, HDR, Water Rendering, Post-processing</span>
+            </li>
+          </ul>
         </div>
 
         <div class="skill-group reveal">
-          <h3 class="skill-group-title" data-i18n="skills.tools">Tools</h3>
-          <div class="skill-cards">
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">🐙</text></svg>
-              <span>Git / GitHub</span>
-            </div>
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">🐳</text></svg>
-              <span>[Tool]</span>
-            </div>
-            <div class="skill-card">
-              <svg viewBox="0 0 32 32" width="28"><text y="24" font-size="24">☁️</text></svg>
-              <span>[Cloud]</span>
-            </div>
+          <div class="skill-group-header">
+            <span class="skill-group-icon">&#9007;</span>
+            <h3 data-i18n="skills.arch">Architecture &amp; Tools</h3>
           </div>
+          <ul class="skill-list">
+            <li>
+              <span class="skill-name">ECS / Bridge Pattern</span>
+              <span class="skill-desc" data-i18n="sk.ecs">Data-driven entity architecture, engine–logic decoupling</span>
+            </li>
+            <li>
+              <span class="skill-name">JSON Prefab Pipeline</span>
+            </li>
+            <li>
+              <span class="skill-name">Git / GitHub</span>
+            </li>
+            <li>
+              <span class="skill-name">Photoshop</span>
+              <span class="skill-desc" data-i18n="sk.ps">Anime-style illustration</span>
+            </li>
+            <li>
+              <span class="skill-name">Blender</span>
+              <span class="skill-desc" data-i18n="sk.blender">3D modeling, beginner level</span>
+            </li>
+          </ul>
         </div>
 
       </div>
@@ -173,70 +173,138 @@
   <!-- ═══ WORKS ═══ -->
   <section class="section" id="works">
     <div class="container">
-      <h2 class="section-title">
-        <span class="title-deco"></span>
-        <span data-i18n="works.title">Works</span>
-        <span class="title-deco"></span>
-      </h2>
+      <h2 class="section-title" data-i18n="works.title">Works</h2>
       <div class="works-grid">
 
+        <!-- Project 1 -->
         <article class="work-card reveal">
-          <div class="work-img">
-            <img src="assets/project1.jpg" alt="Project 1" onerror="this.style.display='none'" />
-            <div class="work-img-placeholder">
-              <svg viewBox="0 0 60 60" width="40"><rect x="4" y="4" width="52" height="52" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 40l14-14 10 10 10-14 18 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="20" cy="22" r="5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <div class="work-card-header">
+            <div class="work-meta">
+              <span class="work-type">3D Action Game</span>
+              <span class="work-date">2025.11 – 2025.12</span>
+            </div>
+            <span class="work-role" data-i18n="role.solo">Solo Developer</span>
+          </div>
+          <div class="work-video">
+            <div class="video-wrap">
+              <iframe
+                src="https://www.youtube.com/embed/KzcELEoVv0Y"
+                title="CSC8503 Real-time Game Prototype Demo"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                loading="lazy">
+              </iframe>
             </div>
           </div>
           <div class="work-body">
-            <h3 class="work-title">[Project Name]</h3>
-            <p class="work-desc" data-i18n="works.p1.desc">[Brief description of this project — what it does, what problem it solves, what tech it uses.]</p>
+            <h3 class="work-title">Real-time Game Prototype</h3>
+            <p class="work-course">CSC8503</p>
+            <p class="work-desc" data-i18n="p1.desc">
+              A 3D game prototype built with C++/NCL framework featuring package collection gameplay, ray-cast + spring-constraint object interaction, FSM/Behavior Tree/A* enemy AI, and server-authoritative multiplayer with 20Hz snapshot broadcasting and client-side interpolation via ENet/UDP.
+            </p>
             <div class="work-tags">
-              <span class="tag tag--sm">[Tech 1]</span>
-              <span class="tag tag--sm">[Tech 2]</span>
-              <span class="tag tag--sm">[Tech 3]</span>
+              <span class="tag tag--sm">C++</span>
+              <span class="tag tag--sm">NCL Framework</span>
+              <span class="tag tag--sm">ENet</span>
+              <span class="tag tag--sm">Jolt Physics</span>
+              <span class="tag tag--sm">A* Pathfinding</span>
             </div>
             <div class="work-links">
-              <a href="#" class="btn-outline" target="_blank" rel="noopener">GitHub</a>
-              <a href="#" class="btn-outline" target="_blank" rel="noopener">Demo</a>
+              <a href="https://github.com/white048/CSC8503" class="btn-outline" target="_blank" rel="noopener">GitHub</a>
+              <a href="https://youtu.be/KzcELEoVv0Y?si=yZvCJ-BlAVv5Ei46" class="btn-outline btn-yt" target="_blank" rel="noopener">YouTube</a>
             </div>
           </div>
         </article>
 
+        <!-- Project 2 -->
         <article class="work-card reveal">
-          <div class="work-img">
-            <div class="work-img-placeholder">
-              <svg viewBox="0 0 60 60" width="40"><rect x="4" y="4" width="52" height="52" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 40l14-14 10 10 10-14 18 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="20" cy="22" r="5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <div class="work-card-header">
+            <div class="work-meta">
+              <span class="work-type">3D Rendering Pipeline</span>
+              <span class="work-date">2025.10 – 2025.11</span>
+            </div>
+            <span class="work-role" data-i18n="role.solo">Solo Developer</span>
+          </div>
+          <div class="work-video">
+            <div class="video-wrap">
+              <iframe
+                src="https://www.youtube.com/embed/3fZ3JEgV65g"
+                title="CSC8502 Real-time Graphics Rendering Demo"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                loading="lazy">
+              </iframe>
             </div>
           </div>
           <div class="work-body">
-            <h3 class="work-title">[Project Name]</h3>
-            <p class="work-desc" data-i18n="works.p2.desc">[Project description.]</p>
+            <h3 class="work-title">Real-time Graphics Rendering</h3>
+            <p class="work-course">CSC8502</p>
+            <p class="work-desc" data-i18n="p2.desc">
+              Real-time 3D scene built with NCLGL/OpenGL featuring Cook-Torrance PBR shading, IBL pre-computation (irradiance map, prefiltered cubemap, BRDF LUT), HDR tone mapping, water rendering with Fresnel reflection/refraction and spring-damper buoyancy, and a modular post-processing system.
+            </p>
             <div class="work-tags">
-              <span class="tag tag--sm">[Tech 1]</span>
-              <span class="tag tag--sm">[Tech 2]</span>
+              <span class="tag tag--sm">C++</span>
+              <span class="tag tag--sm">OpenGL</span>
+              <span class="tag tag--sm">PBR</span>
+              <span class="tag tag--sm">IBL</span>
+              <span class="tag tag--sm">HDR</span>
             </div>
             <div class="work-links">
-              <a href="#" class="btn-outline" target="_blank" rel="noopener">GitHub</a>
+              <a href="https://github.com/white048/CSC8502_Final" class="btn-outline" target="_blank" rel="noopener">GitHub</a>
+              <a href="https://youtu.be/3fZ3JEgV65g?si=c9CJPEYEOjuVI4si" class="btn-outline btn-yt" target="_blank" rel="noopener">YouTube</a>
             </div>
           </div>
         </article>
 
+        <!-- Project 3 -->
         <article class="work-card reveal">
-          <div class="work-img">
-            <div class="work-img-placeholder">
-              <svg viewBox="0 0 60 60" width="40"><rect x="4" y="4" width="52" height="52" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 40l14-14 10 10 10-14 18 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><circle cx="20" cy="22" r="5" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          <div class="work-card-header">
+            <div class="work-meta">
+              <span class="work-type">Team Game Project</span>
+              <span class="work-date">2026.01 – 2026.03</span>
             </div>
+            <span class="work-role" data-i18n="role.arch">Architecture &amp; Programming</span>
           </div>
-          <div class="work-body">
-            <h3 class="work-title">[Project Name]</h3>
-            <p class="work-desc" data-i18n="works.p3.desc">[Project description.]</p>
+          <div class="work-body work-body--solo">
+            <h3 class="work-title">Team Game Development</h3>
+            <p class="work-course">CSC8507/08 &nbsp;·&nbsp; <span data-i18n="team.size">4 Members</span></p>
+            <p class="work-desc" data-i18n="p3.desc">
+              Led ECS architecture design with Bridge middleware layer for engine-game logic decoupling. Co-designed JSON + reflection-driven PrefabFactory for data-driven entity configuration. Established team naming conventions and debugging standards.
+            </p>
             <div class="work-tags">
-              <span class="tag tag--sm">[Tech 1]</span>
-              <span class="tag tag--sm">[Tech 2]</span>
+              <span class="tag tag--sm">C++</span>
+              <span class="tag tag--sm">NCLGL</span>
+              <span class="tag tag--sm">ECS</span>
+              <span class="tag tag--sm">JSON</span>
+              <span class="tag tag--sm">Team</span>
             </div>
             <div class="work-links">
-              <a href="#" class="btn-outline" target="_blank" rel="noopener">GitHub</a>
-              <a href="#" class="btn-outline" target="_blank" rel="noopener">Demo</a>
+              <a href="https://github.com/Sinthome-Ludens/CSC8507-08" class="btn-outline" target="_blank" rel="noopener">GitHub</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Project 4 -->
+        <article class="work-card reveal">
+          <div class="work-card-header">
+            <div class="work-meta">
+              <span class="work-type">Game Theory Simulation</span>
+              <span class="work-date">2025.09 – 2025.10</span>
+            </div>
+            <span class="work-role" data-i18n="role.solo">Solo Developer</span>
+          </div>
+          <div class="work-body work-body--solo">
+            <h3 class="work-title">Iterated Prisoner's Dilemma Simulator</h3>
+            <p class="work-course">CSC8501</p>
+            <p class="work-desc" data-i18n="p4.desc">
+              C++ IPD simulator supporting multi-strategy tournaments, noise perturbation, evolutionary simulation, and complexity penalty analysis. Features modular strategy interface and unified CLI with text/CSV/JSON output.
+            </p>
+            <div class="work-tags">
+              <span class="tag tag--sm">C++</span>
+              <span class="tag tag--sm">Game Theory</span>
+              <span class="tag tag--sm">CLI</span>
             </div>
           </div>
         </article>
@@ -245,27 +313,65 @@
     </div>
   </section>
 
+  <!-- ═══ ART & VISUAL ═══ -->
+  <section class="section section--alt" id="art">
+    <div class="container">
+      <h2 class="section-title" data-i18n="art.title">Art &amp; Visual</h2>
+
+      <div class="art-subsection">
+        <h3 class="art-sub-title" data-i18n="art.illust">Illustration</h3>
+        <p class="art-caption" data-i18n="art.illust.caption">Personal illustration practice — Photoshop</p>
+        <div class="art-grid" id="illustGrid">
+          <figure class="art-item reveal" data-group="illust" data-src="images/illust_01.jpg" data-caption="illust_01">
+            <img src="images/illust_01.jpg" alt="Illustration 01" loading="lazy" />
+          </figure>
+          <figure class="art-item reveal" data-group="illust" data-src="images/illust_02.jpg" data-caption="illust_02">
+            <img src="images/illust_02.jpg" alt="Illustration 02" loading="lazy" />
+          </figure>
+          <figure class="art-item reveal" data-group="illust" data-src="images/illust_03.jpg" data-caption="illust_03">
+            <img src="images/illust_03.jpg" alt="Illustration 03" loading="lazy" />
+          </figure>
+          <figure class="art-item reveal" data-group="illust" data-src="images/illust_04.jpg" data-caption="illust_04">
+            <img src="images/illust_04.jpg" alt="Illustration 04" loading="lazy" />
+          </figure>
+          <figure class="art-item reveal" data-group="illust" data-src="images/illust_05.jpg" data-caption="illust_05">
+            <img src="images/illust_05.jpg" alt="Illustration 05" loading="lazy" />
+          </figure>
+          <figure class="art-item reveal" data-group="illust" data-src="images/illust_06.jpg" data-caption="illust_06">
+            <img src="images/illust_06.jpg" alt="Illustration 06" loading="lazy" />
+          </figure>
+        </div>
+      </div>
+
+      <div class="art-subsection">
+        <h3 class="art-sub-title" data-i18n="art.model">3D Modeling</h3>
+        <p class="art-caption" data-i18n="art.model.caption">Blender learning exercises</p>
+        <div class="art-grid art-grid--sm" id="modelGrid">
+          <figure class="art-item reveal" data-group="model" data-src="images/model_01.jpg" data-caption="model_01">
+            <img src="images/model_01.jpg" alt="Donut & Coffee Cup — Blender" loading="lazy" />
+          </figure>
+          <figure class="art-item reveal" data-group="model" data-src="images/model_02.jpg" data-caption="model_02">
+            <img src="images/model_02.jpg" alt="Radio Hard Surface — Blender" loading="lazy" />
+          </figure>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- ═══ CONTACT ═══ -->
-  <section class="section section--alt" id="contact">
+  <section class="section" id="contact">
     <div class="container container--narrow">
-      <h2 class="section-title">
-        <span class="title-deco"></span>
-        <span data-i18n="contact.title">Contact</span>
-        <span class="title-deco"></span>
-      </h2>
+      <h2 class="section-title" data-i18n="contact.title">Contact</h2>
       <p class="contact-intro" data-i18n="contact.intro">Feel free to reach out for collaboration or just a chat.</p>
       <div class="contact-links">
-        <a class="contact-btn" href="mailto:[YOUR EMAIL]" aria-label="Email">
-          <svg viewBox="0 0 24 24" width="22" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
-          Email
+        <a class="contact-btn" href="mailto:1790631073@qq.com" aria-label="Email">
+          <svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg>
+          1790631073@qq.com
         </a>
-        <a class="contact-btn" href="https://github.com/[YOUR GITHUB]" target="_blank" rel="noopener" aria-label="GitHub">
-          <svg viewBox="0 0 24 24" width="22" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0112 6.8c.85.004 1.7.115 2.5.337 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10.01 10.01 0 0022 12c0-5.52-4.48-10-10-10z"/></svg>
-          GitHub
-        </a>
-        <a class="contact-btn" href="[YOUR LINKEDIN OR OTHER]" target="_blank" rel="noopener" aria-label="LinkedIn">
-          <svg viewBox="0 0 24 24" width="22" fill="currentColor"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zM9 17H6.5v-7H9v7zm-1.25-8.27a1.37 1.37 0 110-2.74 1.37 1.37 0 010 2.74zM18 17h-2.5v-3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V17H10v-7h2.5v1.04A3.24 3.24 0 0115 9.5c1.66 0 3 1.34 3 3V17z"/></svg>
-          LinkedIn
+        <a class="contact-btn" href="https://github.com/white048" target="_blank" rel="noopener" aria-label="GitHub">
+          <svg viewBox="0 0 24 24" width="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0112 6.8c.85.004 1.7.115 2.5.337 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10.01 10.01 0 0022 12c0-5.52-4.48-10-10-10z"/></svg>
+          github.com/white048
         </a>
       </div>
     </div>
@@ -273,12 +379,7 @@
 
   <!-- ═══ FOOTER ═══ -->
   <footer class="footer">
-    <div class="footer-deco">
-      <svg viewBox="0 0 200 12" preserveAspectRatio="none" width="100%" height="12">
-        <path d="M0 6 Q25 0 50 6 Q75 12 100 6 Q125 0 150 6 Q175 12 200 6" stroke="currentColor" stroke-width="1.5" fill="none"/>
-      </svg>
-    </div>
-    <p class="footer-text">&copy; <span id="year"></span> [YOUR NAME]. <span data-i18n="footer.rights">All rights reserved.</span></p>
+    <p class="footer-text">&copy; <span id="year"></span> Dong Yijun. <span data-i18n="footer.rights">All rights reserved.</span></p>
   </footer>
 
   <script src="js/main.js"></script>
