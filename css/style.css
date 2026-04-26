@@ -128,6 +128,27 @@ h1, h2, h3 { font-family: var(--ff-serif); font-weight: 600; line-height: 1.15; 
 .nav-toggle.open span:nth-child(2) { opacity: 0; }
 .nav-toggle.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
 
+/* ── Language Toggle ── */
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: 1.5px solid var(--border);
+  padding: 0.25rem 0.65rem;
+  font-family: var(--ff-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: border-color var(--transition), color var(--transition);
+  flex-shrink: 0;
+}
+.lang-toggle:hover { border-color: var(--primary); color: var(--text); }
+.lang-sep { opacity: 0.35; }
+.lang-active { color: var(--primary); font-weight: 700; }
+
 /* ══════════════════════════════════════
    HERO
    ══════════════════════════════════════ */
