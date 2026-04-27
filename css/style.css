@@ -8,8 +8,8 @@
   --bg-alt:      #EDE5D8;
   --bg-card:     #F5F0E8;
   --bg-deep:     #E5DDD0;
-  --primary:     #3D3229;
-  --primary-lt:  #5C4B3A;
+  --primary:     #1E3A5F;
+  --primary-lt:  #2D5080;
   --accent:      #6B8E7B;
   --accent-warm: #C4836A;
   --accent-red:  #9B3A2F;
@@ -164,6 +164,40 @@ h1, h2, h3, h4 { font-family: var(--ff-head); line-height: 1.2; }
   position: relative;
   overflow: hidden;
   background: var(--bg);
+}
+
+/* ── Brush stroke decorations ── */
+.hero-brushes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.hbrush {
+  position: absolute;
+  overflow: visible;
+}
+.hbrush-1 {
+  width: 90%;
+  bottom: -8%;
+  left: -5%;
+  color: var(--primary);
+  opacity: 0.045;
+}
+.hbrush-2 {
+  width: 55%;
+  top: 2%;
+  right: -8%;
+  color: var(--primary);
+  opacity: 0.035;
+}
+.hbrush-3 {
+  width: 36%;
+  top: 32%;
+  left: 8%;
+  color: var(--accent);
+  opacity: 0.10;
 }
 
 /* dot grid */
