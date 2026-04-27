@@ -198,17 +198,15 @@ h1, h2, h3, h4 { font-family: var(--ff-head); line-height: 1.2; }
   font-style: italic;
   line-height: 1.0;
   color: var(--primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
 }
 .hero-name-cn {
-  font-size: 0.34em;
+  font-family: var(--ff-head);
+  font-size: 1.05rem;
   font-style: normal;
   font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 0.45em;
+  letter-spacing: 0.2em;
+  margin-top: 0.5rem;
 }
 
 /* thin divider between name and tagline */
@@ -297,14 +295,15 @@ h1, h2, h3, h4 { font-family: var(--ff-head); line-height: 1.2; }
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.04em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-dk);
   border-radius: var(--radius);
-  color: var(--text-muted);
-  transition: border-color var(--transition), color var(--transition);
+  color: var(--primary-lt);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 .btn-outline:hover {
   border-color: var(--primary);
-  color: var(--primary);
+  color: var(--bg);
+  background: var(--primary);
 }
 .btn-outline.btn-yt:hover {
   border-color: #b03a2e;
