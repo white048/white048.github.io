@@ -172,30 +172,46 @@ navLinksEl.querySelectorAll('a').forEach(a => {
   });
 });
 
-// ── Scroll reveal ──
+// ── Scroll reveal (CSS transitionDelay stagger, no setTimeout) ──
 const revealObserver = new IntersectionObserver(entries => {
   entries.forEach(entry => {
     if (!entry.isIntersecting) return;
-    const siblings = entry.target.parentElement.querySelectorAll('.reveal');
-    let delay = 0;
-    siblings.forEach((el, i) => { if (el === entry.target) delay = i * 80; });
-    setTimeout(() => entry.target.classList.add('visible'), delay);
+    const siblings = Array.from(entry.target.parentElement.querySelectorAll('.reveal'));
+    const idx = siblings.indexOf(entry.target);
+    entry.target.style.transitionDelay = `${idx * 0.1}s`;
+    entry.target.classList.add('visible');
     revealObserver.unobserve(entry.target);
   });
-}, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
 
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-// ── Hero entrance ──
-document.addEventListener('DOMContentLoaded', () => {
-  const hero = document.querySelector('.hero-content');
-  if (!hero) return;
-  hero.style.cssText = 'opacity:0;transform:translateY(20px);transition:opacity 0.9s ease,transform 0.9s ease';
-  requestAnimationFrame(() => setTimeout(() => {
-    hero.style.opacity = '1';
-    hero.style.transform = 'translateY(0)';
-  }, 80));
+// ── Hero entrance: handled by CSS @keyframes fadeUp (see style.css) ──
+
+// ── Hero brush stroke draw-in ──
+window.addEventListener('load', () => {
+  document.querySelectorAll('.hbrush path').forEach((path, i) => {
+    let len;
+    try { len = Math.ceil(path.getTotalLength()); } catch (e) { len = 2800; }
+    path.style.strokeDasharray = len;
+    path.style.strokeDashoffset = len;
+    path.style.transition = `stroke-dashoffset ${1.8 + i * 0.45}s cubic-bezier(0.16, 1, 0.3, 1) ${0.1 + i * 0.2}s`;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      path.style.strokeDashoffset = '0';
+    }));
+  });
 });
+
+// ── Section title underline animate-in ──
+const titleObserver = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('title-visible');
+      titleObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.6 });
+document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(el));
 
 // ── Lightbox ──
 (function () {
