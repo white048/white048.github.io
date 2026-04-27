@@ -12,11 +12,12 @@ const translations = {
     'nav.contact': 'Contact',
 
     'hero.eyebrow': "Hello, I'm",
+    'hero.role':    'Game Designer & Developer — System Design · C++ Programming',
     'hero.cta':     'View Works',
     'hero.contact': 'Get in Touch',
 
     'about.title':    'About Me',
-    'about.bio':      'MSc Computer Game Engineering student at Newcastle University, graduating September 2026. I combine game system design thinking with hands-on C++ programming ability. Passionate about JRPG combat systems, turn-based numerical design, and gacha/live-service game operations. I\'ve independently built 3D game prototypes with physics interaction, AI behavior systems, and networked multiplayer, as well as real-time PBR/IBL rendering pipelines. I also draw anime-style illustrations in Photoshop and do beginner-level 3D modeling in Blender.',
+    'about.bio':      "MSc Computer Game Engineering student at Newcastle University, graduating September 2026. I combine game system design thinking with hands-on C++ programming ability. I've independently built 3D game prototypes with physics interaction, AI behavior systems, and networked multiplayer, as well as real-time PBR/IBL rendering pipelines. I also draw anime-style illustrations in Photoshop and do beginner-level 3D modeling in Blender.",
     'about.location': 'Newcastle & Chengdu',
 
     'skills.title':   'Skills',
@@ -63,11 +64,12 @@ const translations = {
     'nav.contact': '联系',
 
     'hero.eyebrow': '你好，我是',
+    'hero.role':    '游戏设计与开发 — 系统设计 · C++ 程序开发',
     'hero.cta':     '查看作品',
     'hero.contact': '联系我',
 
     'about.title':    '关于我',
-    'about.bio':      '纽卡斯尔大学电脑游戏工程硕士，2026年9月毕业。兼具游戏系统设计思维与 C++ 程序开发能力。长期深度游玩 JRPG、回合制、二次元等品类（100+ 款），对战斗系统架构与数值体验有持续拆解分析的习惯。独立完成过包含物理交互、AI、网络同步的 3D 游戏原型与实时渲染管线。业余进行 PS 二次元插画创作与 Blender 建模学习。',
+    'about.bio':      '纽卡斯尔大学电脑游戏工程硕士，2026年9月毕业。兼具游戏系统设计思维与 C++ 程序开发能力。独立完成过包含物理交互、AI、网络同步的 3D 游戏原型与实时渲染管线。业余进行 PS 插画创作与 Blender 建模学习。',
     'about.location': '纽卡斯尔 & 成都',
 
     'skills.title':   '技能',
