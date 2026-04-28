@@ -9,6 +9,7 @@ const translations = {
     'nav.skills':  'Skills',
     'nav.works':   'Works',
     'nav.art':     'Art',
+    'nav.docs':    'Docs',
     'nav.contact': 'Contact',
 
     'hero.eyebrow': "Hello, I'm",
@@ -51,6 +52,13 @@ const translations = {
     'art.model':          '3D Modeling',
     'art.model.caption':  'Blender learning exercises',
 
+    'docs.title':  'Design Documents',
+    'doc1.type':   'Game Design Analysis',
+    'doc1.title':  'Xenoblade Chronicles 2 — Combat System Analysis',
+    'doc1.desc':   "An in-depth breakdown of Xenoblade Chronicles 2's combat design — Driver / Blade mechanics, Arts rhythm, and Trust system, analyzed through a game design lens.",
+    'doc.view':    'View Online',
+    'doc.download':'Download',
+
     'contact.title': 'Contact',
     'contact.intro': 'Feel free to reach out for collaboration or just a chat.',
     'footer.rights': 'All rights reserved.',
@@ -61,6 +69,7 @@ const translations = {
     'nav.skills':  '技能',
     'nav.works':   '作品',
     'nav.art':     '美术',
+    'nav.docs':    '文档',
     'nav.contact': '联系',
 
     'hero.eyebrow': '你好，我是',
@@ -102,6 +111,13 @@ const translations = {
     'art.illust.caption': '个人插画练习 — Photoshop',
     'art.model':          '三维建模',
     'art.model.caption':  'Blender 练习',
+
+    'docs.title':  '策划案',
+    'doc1.type':   '游戏设计分析',
+    'doc1.title':  '异度之刃2 — 战斗系统拆解案',
+    'doc1.desc':   '对《异度之刃2》战斗设计的深度拆解——分析御刃者/异刃机制、Arts节奏系统与信赖度系统，从游戏设计视角进行专业解读。',
+    'doc.view':    '在线查看',
+    'doc.download':'下载文档',
 
     'contact.title': '联系我',
     'contact.intro': '欢迎交流合作，随时联系我。',
