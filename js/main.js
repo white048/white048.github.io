@@ -229,6 +229,44 @@ const titleObserver = new IntersectionObserver(entries => {
 }, { threshold: 0.6 });
 document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(el));
 
+// ── Doc Modal ──
+(function () {
+  const modal    = document.getElementById('docModal');
+  const frame    = document.getElementById('docModalFrame');
+  const closeBtn = document.getElementById('docModalClose');
+  const DOC_SRC  = 'https://view.officeapps.live.com/op/view.aspx?src=' +
+                   'https%3A%2F%2Fwhite048.github.io%2Fword%2F' +
+                   '%E5%BC%82%E5%BA%A6%E4%B9%8B%E5%88%832_%E6%88%98%E6%96%97%E7%B3%BB%E7%BB%9F%E6%8B%86%E8%A7%A3%E6%A1%88.docx';
+
+  function openModal() {
+    frame.src = DOC_SRC;
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    frame.src = '';
+  }
+
+  // Click anywhere on card (except download link) to open
+  document.querySelectorAll('.doc-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.btn-doc-dl')) return;
+      openModal();
+    });
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(); }
+    });
+  });
+
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (modal.classList.contains('open') && e.key === 'Escape') closeModal();
+  });
+})();
+
 // ── Lightbox ──
 (function () {
   const lb      = document.getElementById('lightbox');
