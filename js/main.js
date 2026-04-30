@@ -143,7 +143,7 @@ function applyLang(lang) {
 }
 
 // ── Language toggle init ──
-let currentLang = localStorage.getItem('lang') || 'en';
+let currentLang = localStorage.getItem('lang') || 'zh';
 applyLang(currentLang);
 document.getElementById('langToggle').addEventListener('click', () => {
   currentLang = currentLang === 'en' ? 'zh' : 'en';
