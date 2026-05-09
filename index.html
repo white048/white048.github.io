@@ -14,9 +14,15 @@
 
   <!-- ═══ DOC MODAL ═══ -->
   <div id="docModal" class="doc-modal" role="dialog" aria-modal="true" aria-label="Document viewer">
-    <button class="doc-modal-close" id="docModalClose" aria-label="Close">&times;</button>
-    <div class="doc-modal-wrap">
-      <iframe id="docModalFrame" src="" title="Document viewer"></iframe>
+    <div class="doc-modal-panel">
+      <div class="doc-modal-header">
+        <span class="doc-modal-heading" data-i18n="doc1.title">Xenoblade Chronicles 2 — Combat System Analysis</span>
+        <div class="doc-modal-hactions">
+          <a class="doc-modal-dl" href="word/异度之刃2_战斗系统拆解案.docx" download data-i18n="doc.download">Download</a>
+          <button class="doc-modal-close" id="docModalClose" aria-label="Close">&times;</button>
+        </div>
+      </div>
+      <div class="doc-modal-body" id="docModalBody"></div>
     </div>
   </div>
 
@@ -204,7 +210,7 @@
         <article class="work-card reveal">
           <div class="work-card-header">
             <div class="work-meta">
-              <span class="work-type">3D Action Game</span>
+              <span class="work-type" data-i18n="p1.type">3D Action Game</span>
               <span class="work-date">2025.11 – 2025.12</span>
             </div>
             <span class="work-role" data-i18n="role.solo">Solo Developer</span>
@@ -223,7 +229,7 @@
             </div>
           </div>
           <div class="work-body">
-            <h3 class="work-title">Real-time Game Prototype</h3>
+            <h3 class="work-title" data-i18n="p1.title">Real-time Game Prototype</h3>
             <p class="work-course">CSC8503</p>
             <p class="work-desc" data-i18n="p1.desc">
               A 3D game prototype built with C++/NCL framework featuring package collection gameplay, ray-cast + spring-constraint object interaction, FSM/Behavior Tree/A* enemy AI, and server-authoritative multiplayer with 20Hz snapshot broadcasting and client-side interpolation via ENet/UDP.
@@ -246,7 +252,7 @@
         <article class="work-card reveal">
           <div class="work-card-header">
             <div class="work-meta">
-              <span class="work-type">3D Rendering Pipeline</span>
+              <span class="work-type" data-i18n="p2.type">3D Rendering Pipeline</span>
               <span class="work-date">2025.10 – 2025.11</span>
             </div>
             <span class="work-role" data-i18n="role.solo">Solo Developer</span>
@@ -264,7 +270,7 @@
             </div>
           </div>
           <div class="work-body">
-            <h3 class="work-title">Real-time Graphics Rendering</h3>
+            <h3 class="work-title" data-i18n="p2.title">Real-time Graphics Rendering</h3>
             <p class="work-course">CSC8502</p>
             <p class="work-desc" data-i18n="p2.desc">
               Real-time 3D scene built with NCLGL/OpenGL featuring Cook-Torrance PBR shading, IBL pre-computation (irradiance map, prefiltered cubemap, BRDF LUT), HDR tone mapping, water rendering with Fresnel reflection/refraction and spring-damper buoyancy, and a modular post-processing system.
@@ -287,13 +293,13 @@
         <article class="work-card reveal">
           <div class="work-card-header">
             <div class="work-meta">
-              <span class="work-type">Team Game Project</span>
+              <span class="work-type" data-i18n="p3.type">Team Game Project</span>
               <span class="work-date">2026.01 – 2026.03</span>
             </div>
             <span class="work-role" data-i18n="role.arch">Architecture &amp; Programming</span>
           </div>
           <div class="work-body work-body--solo">
-            <h3 class="work-title">Team Game Development</h3>
+            <h3 class="work-title" data-i18n="p3.title">Team Game Development</h3>
             <p class="work-course">CSC8507/08 &nbsp;·&nbsp; <span data-i18n="team.size">4 Members</span></p>
             <p class="work-desc" data-i18n="p3.desc">
               Led ECS architecture design with Bridge middleware layer for engine-game logic decoupling. Co-designed JSON + reflection-driven PrefabFactory for data-driven entity configuration. Established team naming conventions and debugging standards.
@@ -315,13 +321,13 @@
         <article class="work-card reveal">
           <div class="work-card-header">
             <div class="work-meta">
-              <span class="work-type">Game Theory Simulation</span>
+              <span class="work-type" data-i18n="p4.type">Game Theory Simulation</span>
               <span class="work-date">2025.09 – 2025.10</span>
             </div>
             <span class="work-role" data-i18n="role.solo">Solo Developer</span>
           </div>
           <div class="work-body work-body--solo">
-            <h3 class="work-title">Iterated Prisoner's Dilemma Simulator</h3>
+            <h3 class="work-title" data-i18n="p4.title">Iterated Prisoner's Dilemma Simulator</h3>
             <p class="work-course">CSC8501</p>
             <p class="work-desc" data-i18n="p4.desc">
               C++ IPD simulator supporting multi-strategy tournaments, noise perturbation, evolutionary simulation, and complexity penalty analysis. Features modular strategy interface and unified CLI with text/CSV/JSON output.
@@ -443,6 +449,7 @@
     <p class="footer-text">&copy; <span id="year"></span> Dong Yijun. <span data-i18n="footer.rights">All rights reserved.</span></p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

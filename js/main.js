@@ -41,6 +41,15 @@ const translations = {
     'role.arch':   'Architecture & Programming',
     'team.size':   '4 Members',
 
+    'p1.type':  '3D Action Game',
+    'p1.title': 'Real-time Game Prototype',
+    'p2.type':  '3D Rendering Pipeline',
+    'p2.title': 'Real-time Graphics Rendering',
+    'p3.type':  'Team Game Project',
+    'p3.title': 'Team Game Development',
+    'p4.type':  'Game Theory Simulation',
+    'p4.title': "Iterated Prisoner's Dilemma Simulator",
+
     'p1.desc': "A 3D game prototype built with C++/NCL framework featuring package collection gameplay, ray-cast + spring-constraint object interaction, FSM/Behavior Tree/A* enemy AI, and server-authoritative multiplayer with 20Hz snapshot broadcasting and client-side interpolation via ENet/UDP.",
     'p2.desc': "Real-time 3D scene built with NCLGL/OpenGL featuring Cook-Torrance PBR shading, IBL pre-computation (irradiance map, prefiltered cubemap, BRDF LUT), HDR tone mapping, water rendering with Fresnel reflection/refraction and spring-damper buoyancy, and a modular post-processing system.",
     'p3.desc': "Led ECS architecture design with Bridge middleware layer for engine-game logic decoupling. Co-designed JSON + reflection-driven PrefabFactory for data-driven entity configuration. Established team naming conventions and debugging standards.",
@@ -56,8 +65,9 @@ const translations = {
     'doc1.type':   'Game Design Analysis',
     'doc1.title':  'Xenoblade Chronicles 2 — Combat System Analysis',
     'doc1.desc':   "An in-depth breakdown of Xenoblade Chronicles 2's combat design — Driver / Blade mechanics, Arts rhythm, and Trust system, analyzed through a game design lens.",
-    'doc.view':    'View Online',
+    'doc.view':    'View',
     'doc.download':'Download',
+    'doc.loading': 'Loading document…',
 
     'contact.title': 'Contact',
     'contact.intro': 'Feel free to reach out for collaboration or just a chat.',
@@ -101,6 +111,15 @@ const translations = {
     'role.arch':   '架构设计 / 编程',
     'team.size':   '4人团队',
 
+    'p1.type':  '3D 动作游戏',
+    'p1.title': '实时游戏原型',
+    'p2.type':  '3D 渲染管线',
+    'p2.title': '实时图形渲染',
+    'p3.type':  '团队游戏项目',
+    'p3.title': '团队游戏开发',
+    'p4.type':  '博弈论模拟',
+    'p4.title': '迭代囚徒困境模拟器',
+
     'p1.desc': '基于 C++/NCL 框架的 3D 游戏原型，包含包裹搬运核心玩法、射线检测+弹簧约束物体交互、状态机/行为树/A*寻路敌人 AI、服务器权威联机同步（20Hz 快照广播+客户端插值，ENet/UDP）。',
     'p2.desc': '基于 NCLGL/OpenGL 的实时 3D 场景，实现 Cook-Torrance PBR、IBL 预计算（辐照度图、预过滤环境图、BRDF LUT）、HDR 色调映射、水体渲染（Fresnel 反射/折射+弹簧阻尼浮力模拟）与模块化后处理系统。',
     'p3.desc': '主导 ECS 分层架构设计，引入 Bridge 中间层解耦引擎与游戏逻辑。参与 JSON+反射驱动的 PrefabFactory 设计，制定团队命名规范与调试标准。',
@@ -116,8 +135,9 @@ const translations = {
     'doc1.type':   '游戏设计分析',
     'doc1.title':  '异度之刃2 — 战斗系统拆解案',
     'doc1.desc':   '对《异度之刃2》战斗设计的深度拆解——分析御刃者/异刃机制、Arts节奏系统与信赖度系统，从游戏设计视角进行专业解读。',
-    'doc.view':    '在线查看',
-    'doc.download':'下载文档',
+    'doc.view':    '查看',
+    'doc.download':'下载',
+    'doc.loading': '文档加载中…',
 
     'contact.title': '联系我',
     'contact.intro': '欢迎交流合作，随时联系我。',
@@ -229,27 +249,36 @@ const titleObserver = new IntersectionObserver(entries => {
 }, { threshold: 0.6 });
 document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(el));
 
-// ── Doc Modal ──
+// ── Doc Modal (mammoth.js inline render) ──
 (function () {
   const modal    = document.getElementById('docModal');
-  const frame    = document.getElementById('docModalFrame');
+  const body     = document.getElementById('docModalBody');
   const closeBtn = document.getElementById('docModalClose');
-  const DOC_SRC  = 'https://view.officeapps.live.com/op/view.aspx?src=' +
-                   'https%3A%2F%2Fwhite048.github.io%2Fword%2F' +
-                   '%E5%BC%82%E5%BA%A6%E4%B9%8B%E5%88%832_%E6%88%98%E6%96%97%E7%B3%BB%E7%BB%9F%E6%8B%86%E8%A7%A3%E6%A1%88.docx';
+  let   loaded   = false;
 
   function openModal() {
-    frame.src = DOC_SRC;
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
+    if (!loaded) {
+      const t = translations[currentLang];
+      body.innerHTML = `<p class="doc-loading">${t['doc.loading'] || 'Loading…'}</p>`;
+      fetch('word/异度之刃2_战斗系统拆解案.docx')
+        .then(r => r.arrayBuffer())
+        .then(buf => mammoth.convertToHtml({ arrayBuffer: buf }))
+        .then(result => { body.innerHTML = result.value; loaded = true; })
+        .catch(() => {
+          const msg = currentLang === 'zh'
+            ? '加载失败，请使用下载功能查看。'
+            : 'Failed to load — please use Download instead.';
+          body.innerHTML = `<p class="doc-loading">${msg}</p>`;
+        });
+    }
   }
   function closeModal() {
     modal.classList.remove('open');
     document.body.style.overflow = '';
-    frame.src = '';
   }
 
-  // Click anywhere on card (except download link) to open
   document.querySelectorAll('.doc-card').forEach(card => {
     card.addEventListener('click', e => {
       if (e.target.closest('.btn-doc-dl')) return;
