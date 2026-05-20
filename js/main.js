@@ -178,9 +178,16 @@ if (yearEl) yearEl.textContent = new Date().getFullYear();
 const navbar  = document.getElementById('navbar');
 const sections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('.nav-links a');
+const backToTop = document.getElementById('backToTop');
 
 function onScroll() {
   navbar.classList.toggle('scrolled', window.scrollY > 20);
+  
+  // Back to top visibility
+  if (backToTop) {
+    backToTop.classList.toggle('visible', window.scrollY > 500);
+  }
+
   let current = '';
   sections.forEach(sec => {
     if (window.scrollY >= sec.offsetTop - 80) current = sec.id;
@@ -192,7 +199,12 @@ function onScroll() {
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
 
-// ── Hamburger menu ──
+// Back to top click
+if (backToTop) {
+  backToTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
 const navToggle  = document.getElementById('navToggle');
 const navLinksEl = document.getElementById('navLinks');
 navToggle.addEventListener('click', () => {
@@ -249,23 +261,33 @@ const titleObserver = new IntersectionObserver(entries => {
 }, { threshold: 0.6 });
 document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(el));
 
-// ── Doc Modal (mammoth.js inline render) ──
+// ── Doc Modal (static HTML render) ──
 (function () {
   const modal    = document.getElementById('docModal');
   const body     = document.getElementById('docModalBody');
   const closeBtn = document.getElementById('docModalClose');
+  const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
   let   loaded   = false;
 
   function openModal() {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
+    
+    // Focus trap: set initial focus to close button
+    setTimeout(() => closeBtn.focus(), 100);
+
     if (!loaded) {
       const t = translations[currentLang];
       body.innerHTML = `<p class="doc-loading">${t['doc.loading'] || 'Loading…'}</p>`;
-      fetch('word/异度之刃2_战斗系统拆解案.docx')
-        .then(r => r.arrayBuffer())
-        .then(buf => mammoth.convertToHtml({ arrayBuffer: buf }))
-        .then(result => { body.innerHTML = result.value; loaded = true; })
+      fetch('docs/combat_system_analysis.html')
+        .then(r => {
+          if (!r.ok) throw new Error('Network response was not ok');
+          return r.text();
+        })
+        .then(html => {
+          body.innerHTML = html;
+          loaded = true;
+        })
         .catch(() => {
           const msg = currentLang === 'zh'
             ? '加载失败，请使用下载功能查看。'
@@ -274,9 +296,28 @@ document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(
         });
     }
   }
+
   function closeModal() {
     modal.classList.remove('open');
     document.body.style.overflow = '';
+  }
+
+  function trapFocus(e) {
+    if (e.key !== 'Tab') return;
+
+    const elements = modal.querySelectorAll(focusableElements);
+    if (elements.length === 0) return;
+
+    const first = elements[0];
+    const last = elements[elements.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   document.querySelectorAll('.doc-card').forEach(card => {
@@ -292,7 +333,10 @@ document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', e => {
-    if (modal.classList.contains('open') && e.key === 'Escape') closeModal();
+    if (modal.classList.contains('open')) {
+      if (e.key === 'Escape') closeModal();
+      trapFocus(e);
+    }
   });
 })();
 
