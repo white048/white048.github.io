@@ -3,6 +3,7 @@
    ══════════════════════════════════════════════ */
 
 // ── Translations ──
+let docLoaded = false;
 const translations = {
   en: {
     'nav.about':   'About',
@@ -160,6 +161,7 @@ function applyLang(lang) {
     btn.querySelector('.lang-zh').classList.toggle('lang-active', lang === 'zh');
   }
   localStorage.setItem('lang', lang);
+  docLoaded = false;
 }
 
 // ── Language toggle init ──
@@ -265,28 +267,28 @@ document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(
 (function () {
   const modal    = document.getElementById('docModal');
   const body     = document.getElementById('docModalBody');
-  const closeBtn = document.getElementById('docModalClose');
-  const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-  let   loaded   = false;
-
-  function openModal() {
+   const closeBtn = document.getElementById('docModalClose');
+   const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+   
+   function openModal() {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
     
     // Focus trap: set initial focus to close button
     setTimeout(() => closeBtn.focus(), 100);
 
-    if (!loaded) {
+    if (!docLoaded) {
       const t = translations[currentLang];
       body.innerHTML = `<p class="doc-loading">${t['doc.loading'] || 'Loading…'}</p>`;
-      fetch('docs/combat_system_analysis.html')
+      const fileName = currentLang === 'en' ? 'docs/combat_system_analysis_en.html' : 'docs/combat_system_analysis.html';
+      fetch(fileName)
         .then(r => {
           if (!r.ok) throw new Error('Network response was not ok');
           return r.text();
         })
         .then(html => {
           body.innerHTML = html;
-          loaded = true;
+          docLoaded = true;
         })
         .catch(() => {
           const msg = currentLang === 'zh'
