@@ -1,0 +1,173 @@
+<h1>Xenoblade Chronicles 2 — Combat System Analysis</h1>
+<p class="doc-meta">Author: Dong Yijun &nbsp;·&nbsp; April 2026</p>
+
+<h2>Chapter 1: Overview</h2>
+
+<h3>1.1 Product Positioning (What)</h3>
+<p>Xenoblade Chronicles 2 (XC2) is an action RPG developed by Monolith Soft and published by Nintendo, released on the Nintendo Switch in December 2017. It belongs to the open-world JRPG genre, centered on a story-driven single-player experience, featuring a hybrid combat system that blends real-time action with turn-based strategy elements.</p>
+<p>Players control Driver–Blade pairs in real-time combat across an open world. The core gameplay loop is "Exploration → Combat → Progression → Story Advancement," with the combat system serving as the technical and mechanical heart of the entire experience.</p>
+
+<h3>1.2 Combat System Overview (How)</h3>
+<p>The combat system follows a four-tier progressive structure: <strong>Auto-Attack → Arts → Specials → Chain Attack</strong>. The lower tier runs continuously and generates resources; the upper tiers consume those resources to enable higher-level actions, forming a complete resource transformation chain.</p>
+<p>The design goals of the four-tier structure are: Auto-Attacks lower the skill floor (base tier); the Arts Cancel mechanic introduces execution depth (middle tiers); Elemental Orbs and Blade Combos introduce team strategy depth (upper tier); Chain Attacks convert all accumulated resources into burst damage (top tier).</p>
+<p>The system's defining philosophy can be summarized as <strong>"low floor, high ceiling"</strong> — novice players can progress through the game using Auto-Attacks alone, while skilled players can multiply damage output by dozens of times through precise cancel execution and Elemental Orb planning.</p>
+
+<h3>1.3 Purpose of Analysis (Why)</h3>
+<p>This document analyzes the combat system based on three considerations:</p>
+<ul>
+  <li><strong>Nested resource design:</strong> The four tiers form a tight chain of resource generation and consumption, making this a model case for studying "how resource cycles drive combat rhythm."</li>
+  <li><strong>Systematic use of positive feedback loops:</strong> Arts Cancel, Elemental Orb accumulation, and Chain Attack detonation all serve positive feedback experiences — ideal for analyzing how positive feedback is applied and bounded in combat systems.</li>
+  <li><strong>Known design flaws:</strong> The shared Party Gauge for revival and Chain Attacks, late-game numerical inflation, and other issues provide material for analyzing design tradeoffs and failure cases.</li>
+</ul>
+<p>This analysis is limited to real-time combat mechanics and does not cover the progression system (Core Chips, Aux Cores, Trust) in detail. Progression numbers are mentioned only where they directly affect combat mechanics.</p>
+
+<h2>Chapter 2: Glossary</h2>
+<table>
+  <thead><tr><th>Term</th><th>Chinese</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td>Driver</td><td>御刃者</td><td>The player-controlled human characters who execute Auto-Attacks and Arts. Each Driver can equip up to 3 Blades.</td></tr>
+    <tr><td>Blade</td><td>异刃</td><td>Beings who resonate with Drivers, determining weapon type, element, and Specials. Players can switch between 3 Blades in combat.</td></tr>
+    <tr><td>Auto-Attack</td><td>自动攻击</td><td>A basic three-hit combo that executes automatically when a Driver is in range and not performing another action. The third hit deals the most damage and is the origin of all resource chains.</td></tr>
+    <tr><td>Arts</td><td>战技</td><td>Active skills with independent cooldowns; each Blade has 3–4. Activating an Art by canceling an Auto-Attack grants additional benefits.</td></tr>
+    <tr><td>Arts Cancel</td><td>战技取消</td><td>Activating an Art at the exact moment an Auto-Attack lands, canceling its recovery animation while boosting Art damage and accelerating charge.</td></tr>
+    <tr><td>Special</td><td>必杀技</td><td>Powerful skills consuming the Special gauge, available at Levels 1–4. Higher levels deal greater damage with stronger effects.</td></tr>
+    <tr><td>Blade Combo</td><td>融合连击</td><td>Chaining Lv1→Lv2→Lv3 Specials along a specific elemental path; completing the chain attaches one Elemental Orb to the enemy.</td></tr>
+    <tr><td>Elemental Orb</td><td>属性球</td><td>An elemental marker attached to enemies after completing a Blade Combo. Up to 8 can exist simultaneously. Orbs are detonated in Chain Attacks for massive damage.</td></tr>
+    <tr><td>Chain Attack</td><td>连锁攻击</td><td>Triggered by consuming a full Party Gauge; the entire party takes turns attacking. Using a type-advantage element detonates the corresponding Orb, greatly increasing the damage multiplier per Orb.</td></tr>
+    <tr><td>Party Gauge</td><td>队伍槽</td><td>A shared 3-segment resource. A full gauge triggers a Chain Attack; individual segments can revive fallen party members.</td></tr>
+    <tr><td>Driver Combo</td><td>御刃者连击</td><td>A four-stage control chain — Break → Topple → Launch → Smash — requiring Arts from different Drivers and Blades.</td></tr>
+    <tr><td>Blade Switch</td><td>异刃切换</td><td>Switching the active Blade during combat, subject to a cooldown. The switch can cancel Arts recovery animations.</td></tr>
+    <tr><td>Cancel</td><td>取消</td><td>General term for canceling an action's recovery animation through precise timing; applies across Auto-Attacks, Arts, Blade Switches, and more.</td></tr>
+    <tr><td>Enrage</td><td>愤怒状态</td><td>A buff state most Bosses and elite enemies enter when HP drops below 50%, significantly increasing attack power and frequency.</td></tr>
+    <tr><td>Aggro</td><td>仇恨</td><td>A value determining which party member enemies target; the character with the highest Aggro is the primary attack target.</td></tr>
+    <tr><td>Core Chip</td><td>核心芯片</td><td>Equipment attached to Blades that determines base attack power, critical rate, and other stats. Part of the progression system.</td></tr>
+  </tbody>
+</table>
+
+<h2>Chapter 3: Combat System Architecture</h2>
+<p>This chapter describes the four-tier structure from the bottom tier upward. Each tier covers its mechanics, resource relationships, and how it connects to adjacent tiers.</p>
+
+<h3>3.1 Tier 1: Auto-Attacks</h3>
+<p>Auto-Attacks are the foundational resource generators of the combat system. When a Driver is in attack range and not performing another action, they automatically execute a three-hit combo. The first hit deals the least damage; the third deals the most.</p>
+<ul>
+  <li><strong>Resource output:</strong> Each Auto-Attack hit charges the corresponding Art. Charge amounts increase across the three hits, with the third being most efficient.</li>
+  <li><strong>Design purpose:</strong> Provides continuous damage output with zero skill requirement while serving as the origin of the entire resource chain. The three-hit rhythm also creates timing windows for cancel operations.</li>
+</ul>
+
+<h3>3.2 Tier 2: Arts and Cancel Mechanics</h3>
+<p>Arts are active skills with independent cooldowns; each Blade has 3–4. The core design feature of Arts is the cancel mechanic:</p>
+<ul>
+  <li><strong>Arts Cancel:</strong> Activating an Art at the exact moment an Auto-Attack lands cancels the Auto-Attack's recovery animation. This saves time, adds a bonus damage multiplier to the Art, and accelerates the next Auto-Attack's charge. The mechanic guides players toward precise execution through direct numerical rewards.</li>
+  <li><strong>Resource output:</strong> Art hits charge the Special gauge.</li>
+  <li><strong>Dual-track parallel structure:</strong> Arts serve two simultaneous paths — the vertical path charges the Special gauge (advancing the resource chain); the horizontal path triggers Driver Combos (Break → Topple → Launch → Smash control chain). These paths are not mutually exclusive; players naturally pursue both concurrently.</li>
+</ul>
+
+<h3>3.3 Tier 3: Specials and Blade Combos</h3>
+<p>Specials consume the Special gauge and are available at Levels 1–4. The gauge charges cumulatively — it can be released at Level 1 or charged further for higher levels, with greater damage and effects at higher levels.</p>
+<p><strong>Blade Combo:</strong> Following a specific elemental path, party members chain Lv1 → Lv2 → Lv3 Specials in sequence. Each path has elemental requirements. Completing all three steps attaches a corresponding Elemental Orb to the enemy.</p>
+<p><strong>Elemental Orbs:</strong> Orbs are the output of Blade Combos; up to 8 can be attached simultaneously. Orbs produce no immediate effect — their full value is realized in the Chain Attack phase.</p>
+<p>Blade Combos have an <strong>elemental resistance mechanic</strong>: repeating the same elemental path increases the difficulty of triggering it again. This discourages farming a single optimal path and encourages planning multiple different elemental routes.</p>
+
+<h3>3.4 Tier 4: Chain Attacks and Orb Detonation</h3>
+<p>Chain Attacks consume a full Party Gauge (3 segments). Combat pauses while the party takes turns selecting Blades to attack.</p>
+<p><strong>Orb Detonation:</strong> Attacking an Elemental Orb with a type-advantage element during a Chain Attack detonates it. Each detonation provides an escalating damage multiplier bonus. The more Orbs detonated, the more exponentially the final damage grows.</p>
+<p><strong>Full Burst:</strong> Detonating all remaining Elemental Orbs in a single Chain Attack triggers Full Burst — the entire party attacks simultaneously at maximum bonus.</p>
+<p><strong>Design purpose:</strong> Chain Attacks are the ultimate payoff of the entire resource chain — all resources accumulated across the first three tiers are converted into burst damage in this moment. Orb count and detonation efficiency directly determine the order-of-magnitude damage difference, providing the core incentive for players to deeply learn the earlier tiers.</p>
+
+<h2>Chapter 4: Resource System Classification</h2>
+<p>Resources in the combat system fall into three categories: <strong>Generated Resources</strong> (accumulate naturally or through actions), <strong>Limiting Resources</strong> (constrain player behavior as consumables or states), and <strong>Progression Resources</strong> (obtained outside combat, affect in-combat numbers).</p>
+<table>
+  <thead><tr><th>Resource</th><th>Type</th><th>Generation</th><th>Consumption</th></tr></thead>
+  <tbody>
+    <tr><td>Arts Gauge</td><td>Generated</td><td>Auto-Attack hits (3rd hit most efficient)</td><td>Activating an Art</td></tr>
+    <tr><td>Special Gauge</td><td>Generated</td><td>Art hits</td><td>Activating a Special (Lv1–4)</td></tr>
+    <tr><td>Party Gauge</td><td>Generated / Limiting</td><td>Criticals, kills, combo contributions, etc.</td><td>Chain Attack (3 segments) or reviving a party member (1 segment)</td></tr>
+    <tr><td>Elemental Orb</td><td>Generated</td><td>Completing a Blade Combo</td><td>Detonated by a type-advantage element in Chain Attack</td></tr>
+    <tr><td>HP</td><td>Limiting</td><td>Healing Arts, items</td><td>Taking damage (reaching 0 causes incapacitation)</td></tr>
+    <tr><td>Blade Switch Cooldown</td><td>Limiting</td><td>Natural time recovery</td><td>Triggered when switching Blades</td></tr>
+    <tr><td>Elemental Resistance</td><td>Limiting</td><td>Increases after each completed Blade Combo path</td><td>Limits repeated use of the same elemental path</td></tr>
+    <tr><td>Aggro</td><td>Limiting</td><td>Accumulated through attacks, healing, etc.</td><td>Determines enemy target; excessive Aggro draws focused fire</td></tr>
+    <tr><td>Core Chip</td><td>Progression</td><td>Obtained / crafted outside combat</td><td>Equipped to boost base attack and other stats</td></tr>
+    <tr><td>Aux Core</td><td>Progression</td><td>Obtained outside combat</td><td>Provides passive effects (critical rate bonuses, etc.)</td></tr>
+  </tbody>
+</table>
+
+<h3>4.1 Party Gauge: Resource Conflict Between Recovery and Burst</h3>
+<p>The Party Gauge is the only resource that simultaneously serves two mutually exclusive purposes: triggering Chain Attacks (consuming all 3 segments) and reviving fallen party members (1 segment each).</p>
+<p>In theory this creates a "risk management" decision — players must weigh conserving resources for recovery against spending them for burst. However, in actual combat — particularly in the second half of Boss fights — this design reveals a structural problem:</p>
+<ul>
+  <li><strong>Compounding pressure from Enrage:</strong> Most Bosses and elite enemies enter Enrage when HP drops below 50%, sharply increasing attack power and frequency. Party pressure rises, and party members begin falling more frequently.</li>
+  <li><strong>Negative feedback loop:</strong> Party member falls → spend Party Gauge to revive → Party Gauge cannot fill → cannot trigger Chain Attack → cannot quickly end the fight through burst damage → Boss stays in Enrage → party members keep falling. This loop is very difficult to break when underleveled.</li>
+  <li><strong>Design tradeoff analysis:</strong> Sharing revival and Chain Attack resources can be understood narratively as "a fallen teammate diminishes team morale." But from a systems perspective, the recovery mechanic and core burst mechanic competing for the same resource means that the scenario most requiring a Chain Attack is precisely the scenario where triggering one is hardest. The system loses difficulty-adjustment flexibility.</li>
+</ul>
+
+<h2>Chapter 5: Combat Rhythm Structure</h2>
+<p>From a resource-flow perspective, a complete fight can be divided into four phases based on the active resource tier and operational focus.</p>
+
+<h3>5.1 Opening Phase: Resource Generation Startup</h3>
+<p>Combat begins with Auto-Attacks. This phase focuses on establishing the Auto-Attack rhythm, accelerating Arts charge through cancels, and planning the elemental path for the first Blade Combo. Combat pace is relatively relaxed and player action density is low.</p>
+
+<h3>5.2 Accumulation Phase: Multi-Track Parallel Progression</h3>
+<p>As Arts gauges fill and Arts begin firing, the Special gauge accumulates and operations enter multi-track parallel mode. This phase requires simultaneously managing: Arts activation and cancel timing, Special level choice (fire Lv1 quickly vs. charge to Lv3 for Blade Combo path requirements), Driver Combo triggering and chaining, and Blade switch timing and cooldown management. Operational density rises significantly; players must handle multiple decisions within the same time window.</p>
+
+<h3>5.3 Orb Application Phase: Strategy Planning and Execution</h3>
+<p>After the first Blade Combo completes and the first Elemental Orb attaches, combat enters the "prepare for Chain Attack" phase. The primary goal is completing as many different elemental Blade Combos as possible to maximize Orbs on the enemy. Operational focus shifts from "resource accumulation" to "elemental path planning" — considering the party's elemental coverage, the distribution of existing Orbs, and how resistance affects subsequent paths.</p>
+
+<h3>5.4 Burst Phase: Chain Attack Payoff</h3>
+<p>When the Party Gauge reaches 3 segments and the target Orb count is achieved, the Chain Attack triggers. Operations become turn-based — players sequentially select Blades to attack, targeting type-advantage elements to detonate as many Orbs as possible and trigger Full Burst. An 8-Orb Full Burst can deal dozens of times the damage of regular combat — this order-of-magnitude difference is the core incentive driving players to deeply learn the earlier three tiers.</p>
+
+<h2>Chapter 6: Numerical Design Analysis</h2>
+<p><em>Numerical data in this chapter is sourced from the community database "Paradise Data Administration" (xenoblade2.cn), obtained through reverse engineering and in-game testing; not official figures. Conclusions may deviate from actual internal implementation.</em></p>
+
+<h3>6.1 Damage Formula Structure</h3>
+<p>Damage calculation uses a multi-factor multiplicative structure:</p>
+<p><strong>Final Damage = Base Attack × Weapon Multiplier × Skill Multiplier × Elemental Advantage × Critical Multiplier × Range Modifier × Other Modifiers</strong></p>
+<ul>
+  <li><strong>Base Attack:</strong> Driver base value + Blade power + Core Chip attack. Core Chips are the largest source of attack power growth during the progression phase.</li>
+  <li><strong>Weapon Multiplier:</strong> Different weapon types have different base multiplier coefficients, affecting Auto-Attack and Arts base damage.</li>
+  <li><strong>Skill Multiplier:</strong> Inherent damage multipliers for each Art and Special; Lv4 Special multipliers significantly exceed Lv1.</li>
+  <li><strong>Elemental Advantage:</strong> When attack element matches enemy weakness, damage receives a multiplier bonus.</li>
+  <li><strong>Critical Multiplier:</strong> Doubles damage on a critical hit (default 2×, improvable via Aux Cores). Critical rate is determined by Agility differential and Aux Cores.</li>
+  <li><strong>Range Modifier:</strong> Some weapon types (e.g., Katana) have a "sweet spot" mechanic — attacking at a specific distance grants bonus damage.</li>
+</ul>
+
+<h3>6.2 Design Impact of the Multiplicative Structure</h3>
+<p>Because multiple factors in the damage formula multiply rather than add, improvements to each factor amplify each other:</p>
+<ul>
+  <li><strong>Accelerating progression returns:</strong> When multiple multiplicative factors improve simultaneously, final damage grows exponentially. Late-game players who obtain high-tier Core Chips, high critical rate Aux Cores, and high-level Specials see damage values inflate sharply.</li>
+  <li><strong>Numerical explosion in Chain Attacks:</strong> The multiplicative bonus from each Orb detonation stacks with the above structure, making 8-Orb Full Bursts far exceed regular combat damage. This is intentional, but causes the gap between regular combat and Chain Attack phases to become so large that regular combat feels inconsequential in late game.</li>
+</ul>
+
+<h3>6.3 Experience Impact of Numerical Inflation</h3>
+<ul>
+  <li><strong>Non-linear progression feedback:</strong> Early improvements to individual factors produce modest damage gains — players may not perceive meaningful returns. But when multiple factors converge in late game, damage suddenly jumps by orders of magnitude, creating an experiential discontinuity.</li>
+  <li><strong>Difficulty curve misalignment:</strong> Late-game Boss HP is set extremely high to accommodate inflated damage numbers, which means players with insufficient progression face a steeper difficulty wall, exacerbating the Party Gauge negative feedback loop (see Section 4.1).</li>
+</ul>
+
+<h2>Chapter 7: Design Evaluation and Improvement Thinking</h2>
+<p><em>This chapter represents personal design thinking and analysis, not objective conclusions. Evaluation is based on actual play experience and the mechanical analysis in preceding chapters.</em></p>
+
+<h3>7.1 Design Strengths</h3>
+<ul>
+  <li><strong>Progressive resource incentives:</strong> The four-tier structure naturally guides players from basic operations to advanced strategy through clear resource dependencies. Each tier's output becomes the next tier's input, creating a positive incentive where "deeper engagement yields greater rewards."</li>
+  <li><strong>Global consistency of cancel mechanics:</strong> The cancel operation as a design principle spans Auto-Attacks → Arts → Blade Switches → Specials. The learning cost is one-time — understanding the cancel in one tier transfers naturally to all others.</li>
+  <li><strong>Emergent team strategy:</strong> Blade Combo elemental path planning, Driver Combo role distribution, and Blade elemental coverage naturally produce strategic depth at the system level, without needing dedicated strategy systems.</li>
+</ul>
+
+<h3>7.2 Design Problems</h3>
+<ul>
+  <li><strong>Dual-purpose Party Gauge:</strong> The shared revival and Chain Attack resource creates a negative feedback loop in difficult fights. Separating revival resources (e.g., a dedicated revival count or cooldown) would preserve Chain Attacks as the core burst mechanic while preventing the recovery mechanic from consuming burst resources. However, independent revival resources may reduce combat tension — the dual-purpose gauge is itself a "resource scarcity creates tension" design. Any modification requires evaluating cascading effects on overall difficulty.</li>
+  <li><strong>Multiplicative formula inflation:</strong> A purely multiplicative structure causes late-game numerical explosion. Common mitigations include: introducing additive factors to smooth the growth curve, setting diminishing returns caps on individual factors, or applying decreasing coefficients to Chain Attack detonation multipliers.</li>
+  <li><strong>Tutorial pacing issues:</strong> The complete four-tier structure unlocks across dozens of hours of early gameplay. Arts Cancel, Blade Combos, and other core mechanics are introduced late and inadequately explained. Some players complete the entire game without understanding how Blade Combos work, leaving the system's depth inaccessible.</li>
+</ul>
+
+<h3>7.3 Genre Perspective</h3>
+<p>Xenoblade Chronicles 2's four-tier progressive combat design is notably distinctive within the JRPG genre. Its hybrid structure of "real-time action at the base tier + turn-based strategy at the top tier" can be viewed as a paradigm exploration in JRPG combat design.</p>
+<p>The design thinking's reference value for other genres — particularly gacha RPGs and turn-based mobile games — lies in how to use layered resource chain design to provide sufficient strategic depth while maintaining a low skill floor, accommodating a broader player base and fragmented play sessions.</p>
+
+<h2>References</h2>
+<ol>
+  <li>Paradise Data Administration (xenoblade2.cn) — Damage calculation formulas, Chain Attack mechanics, Blade Combo mechanics, combat system details. Community-maintained data wiki; data obtained through reverse engineering and in-game testing; not official.</li>
+  <li>Bilibili video BV1Fa4y1e73T — Xenoblade Chronicles 2 combat system explanation, used for cross-verification of mechanics.</li>
+</ol>
+<p class="doc-end">— End —</p>

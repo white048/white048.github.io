@@ -1076,6 +1076,22 @@ h1, h2, h3, h4 { font-family: var(--ff-head); line-height: 1.2; }
   color: var(--text-muted);
 }
 
+.doc-meta {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.03em;
+}
+.doc-end {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
 .doc-loading {
   text-align: center;
   padding: 4rem 2rem;

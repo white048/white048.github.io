@@ -263,63 +263,33 @@ const titleObserver = new IntersectionObserver(entries => {
 }, { threshold: 0.6 });
 document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(el));
 
-// ── Doc Modal (static HTML render) ──
+// ── Doc Modal (bilingual pre-rendered HTML) ──
 (function () {
   const modal    = document.getElementById('docModal');
   const body     = document.getElementById('docModalBody');
-   const closeBtn = document.getElementById('docModalClose');
-   const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-   
-   function openModal() {
+  const closeBtn = document.getElementById('docModalClose');
+  const cache    = {};   // { zh: '…html…', en: '…html…' }
+
+  function openModal() {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
-    
-    // Focus trap: set initial focus to close button
-    setTimeout(() => closeBtn.focus(), 100);
-
-    if (!docLoaded) {
-      const t = translations[currentLang];
-      body.innerHTML = `<p class="doc-loading">${t['doc.loading'] || 'Loading…'}</p>`;
-      const fileName = currentLang === 'en' ? 'docs/combat_system_analysis_en.html' : 'docs/combat_system_analysis.html';
-      fetch(fileName)
-        .then(r => {
-          if (!r.ok) throw new Error('Network response was not ok');
-          return r.text();
-        })
-        .then(html => {
-          body.innerHTML = html;
-          docLoaded = true;
-        })
-        .catch(() => {
-          const msg = currentLang === 'zh'
-            ? '加载失败，请使用下载功能查看。'
-            : 'Failed to load — please use Download instead.';
-          body.innerHTML = `<p class="doc-loading">${msg}</p>`;
-        });
-    }
+    const lang = currentLang;
+    if (cache[lang]) { body.innerHTML = cache[lang]; return; }
+    const t = translations[lang];
+    body.innerHTML = `<p class="doc-loading">${t['doc.loading'] || 'Loading…'}</p>`;
+    fetch(lang === 'zh' ? 'word/combat_zh.html' : 'word/combat_en.html')
+      .then(r => r.text())
+      .then(html => { cache[lang] = html; body.innerHTML = html; })
+      .catch(() => {
+        body.innerHTML = `<p class="doc-loading">${
+          lang === 'zh' ? '加载失败，请使用下载功能查看。' : 'Failed to load — please use Download instead.'
+        }</p>`;
+      });
   }
 
   function closeModal() {
     modal.classList.remove('open');
     document.body.style.overflow = '';
-  }
-
-  function trapFocus(e) {
-    if (e.key !== 'Tab') return;
-
-    const elements = modal.querySelectorAll(focusableElements);
-    if (elements.length === 0) return;
-
-    const first = elements[0];
-    const last = elements[elements.length - 1];
-
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
   }
 
   document.querySelectorAll('.doc-card').forEach(card => {
@@ -335,10 +305,7 @@ document.querySelectorAll('.section-title').forEach(el => titleObserver.observe(
   closeBtn.addEventListener('click', closeModal);
   modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', e => {
-    if (modal.classList.contains('open')) {
-      if (e.key === 'Escape') closeModal();
-      trapFocus(e);
-    }
+    if (modal.classList.contains('open') && e.key === 'Escape') closeModal();
   });
 })();
 
