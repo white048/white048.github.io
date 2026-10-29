@@ -49,6 +49,8 @@ button { font: inherit; color: inherit; }
 .back:hover { color: var(--rose); }
 .brand { font: 26px/1 var(--display); letter-spacing: .06em; text-decoration: none; }
 .brand b { font-weight: 400; color: var(--red); }
+.tools { display: flex; gap: 8px; }
+.tool.off { text-decoration: line-through; opacity: .55; }
 .tool { font: 700 13px/1 var(--body); background: transparent; border: 1.5px solid currentColor; padding: 7px 10px; cursor: pointer; white-space: nowrap; }
 .tool:hover { background: var(--red); border-color: var(--red); }
 html[data-lang="zh"] .l-zh, html[data-lang="en"] .l-en { color: var(--red); }
@@ -101,6 +103,9 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
 .st-card .concept { font: 15px var(--type); }
 .st-card p { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); flex: 1; }
 .st-card .btn { align-self: flex-start; }
+.st-card--bonus { margin-top: 18px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px 20px; border-style: dashed; box-shadow: 6px 6px 0 var(--red); }
+.st-card--bonus > div { flex: 1; min-width: 220px; }
+.st-card--bonus p { margin: 4px 0 0; flex: none; }
 .title-foot { margin-top: 30px; font-size: 13.5px; color: var(--ink-2); max-width: 70ch; }
 
 /* ── station frame ── */
@@ -191,6 +196,16 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
 .temp .ends { display: flex; justify-content: space-between; color: var(--ink-2); font-size: 12.5px; }
 .lever { font: 400 24px/1 var(--display); letter-spacing: .08em; padding: 14px 30px 12px 18px; }
 
+/* ── 04 CHAIN ── */
+.chain-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 62px; margin-bottom: 20px; }
+.cw { font: clamp(30px, 6vw, 50px)/1 var(--display); letter-spacing: .02em; background: var(--ink); color: var(--paper); padding: 9px 12px 4px; }
+.cw.last, .cw.end { background: var(--red); }
+.cw.stamped { animation: stamp .38s cubic-bezier(.3, 1.6, .5, 1); }
+.caret { width: 12px; height: 46px; background: var(--red); animation: blink 1s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+.chain-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: end; }
+.chain-fin { margin-top: 0; }
+
 /* ── finale ── */
 .finale { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 22px; }
 .finale canvas { width: 100%; height: auto; border: 2px solid var(--ink); box-shadow: 9px 9px 0 var(--red); background: var(--paper); }
@@ -202,7 +217,7 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
   .title .lede { max-width: none; }
   .title::after { display: none; }   /* the sun would merge into the red banner */
   .stations { grid-template-columns: minmax(0, 1fr); }
-  .press-grid, .finale { grid-template-columns: minmax(0, 1fr); }
+  .press-grid, .finale, .chain-grid { grid-template-columns: minmax(0, 1fr); }
   .sheet { aspect-ratio: auto; min-height: 230px; }
   .board { padding: 16px 10px; }
   .slug { width: clamp(18px, 5.8vw, 30px); height: 38px; font-size: 23px; line-height: 38px; }

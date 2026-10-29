@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Token Forge — a print shop that writes like a language model</title>
-  <meta name="description" content="A three-station browser game about how language models read and write: cut text into tokens, pour attention, pull the sampling lever. 词元铸造厂：三个工位体验语言模型如何切词、注意、采样。" />
+  <meta name="description" content="A browser game about how language models read and write: cut text into tokens, pour attention, pull the sampling lever, chain a whole slogan. 词元铸造厂：体验语言模型如何切词、注意、采样、逐词生成。" />
   <meta name="theme-color" content="#1d1916" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Token Forge — a print shop that writes like a language model" />
@@ -16,6 +16,22 @@
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
   <link rel="preload" href="../../fonts/bebas-neue-latin-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="forge.css" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Token Forge",
+      "url": "https://white048.github.io/games/token-forge/",
+      "description": "A five-minute browser game about how language models work: tokenisation, attention, sampling and autoregression.",
+      "author": { "@type": "Person", "name": "Dong Yijun", "url": "https://white048.github.io/" },
+      "gamePlatform": "Web browser",
+      "playMode": "SinglePlayer",
+      "genre": ["Educational", "Puzzle"],
+      "inLanguage": ["en", "zh-CN"],
+      "isAccessibleForFree": true,
+      "image": "https://white048.github.io/games/token-forge/og.jpg"
+    }
+  </script>
   <script>
     // same language rule as the homepage: saved choice, ?lang=, else the browser's first language
     (function () {
@@ -36,7 +52,10 @@
   <header class="bar">
     <a class="back" href="../../">← <span class="en" lang="en">Dong Yijun</span><span class="zh" lang="zh-CN">董一均主页</span></a>
     <a class="brand" href="./" data-act="home">TOKEN <b>FORGE</b></a>
-    <button class="tool" id="langToggle" type="button" aria-label="Switch language / 切换语言"><span class="l-zh">中</span> / <span class="l-en">EN</span></button>
+    <div class="tools">
+      <button class="tool" id="muteToggle" type="button" aria-label="Sound effects / 音效" aria-pressed="true">♪</button>
+      <button class="tool" id="langToggle" type="button" aria-label="Switch language / 切换语言"><span class="l-zh">中</span> / <span class="l-en">EN</span></button>
+    </div>
   </header>
   <main id="stage">
     <noscript><p>Token Forge needs JavaScript. / 这个小游戏需要开启 JavaScript。</p></noscript>
