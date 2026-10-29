@@ -5,7 +5,7 @@
    floor jumps, video facades, lightbox and toasts.
    ══════════════════════════════════════════════ */
 import { FLOORS, ASSETS, floorCentre } from './floors.js';
-import { placeholderURL } from './placeholders.js';
+import { placeholderURL, postersReady } from './placeholders.js';
 
 const root = document.documentElement;
 const $ = (s, el = document) => el.querySelector(s);
@@ -60,10 +60,9 @@ function toast(text, actions = []) {
 }
 function hideToast() { toastEl.hidden = true; }
 
-// ── Placeholder posters for <img data-ph> (until the commissioned art lands) ──
-const fontsReady = document.fonts.load('22px "Special Elite"').catch(() => {});
+// ── Generated posters for <img data-ph> (until the commissioned art lands) ──
 const assetURL = id => ASSETS[id].src || placeholderURL(id, ASSETS[id]);
-fontsReady.finally(() => {
+postersReady().then(() => {
   for (const img of $$('img[data-ph]')) img.src = assetURL(img.dataset.ph);
 });
 
@@ -94,7 +93,7 @@ function markNav(id) {
 }
 
 // ══ 3D MODE ══
-let scene = null, scenePromise = null, activeId = 'top', sceneReady = false;
+let scene = null, scenePromise = null, activeId = 'top', sceneReady = false, eggFound = false;
 const maxScroll = () => Math.max(1, document.documentElement.scrollHeight - innerHeight);
 const floorAt = p => FLOORS.find(f => p >= f.range[0] && p < f.range[1]);
 const currentProgress = () => (scene ? scene.progress : scrollY / maxScroll());
@@ -149,6 +148,11 @@ async function startScene() {
           L('这台设备跑 3D 有点吃力，要换成简洁模式吗？', 'This device is struggling with the 3D tower. Switch to the plain page?'),
           [{ label: L('切换', 'Switch'), primary: true, run: () => setMode('simple') }, { label: L('继续 3D', 'Keep 3D') }],
         ),
+        onEgg: () => {
+          if (eggFound) return;
+          eggFound = true;
+          toast(L('你找到了那枚掉下去的棋子——它又站起来了。', 'You found the piece that fell. It stands again.'));
+        },
         onLost: () => {
           setMode('simple', { remember: false });
           toast(L('3D 渲染中断了，已切换到简洁模式。', 'The 3D view stopped, so the plain page is shown instead.'));
@@ -312,11 +316,13 @@ function lbShow(i) {
   const item = lbItems[lbIndex];
   lbImg.src = item.src;
   lbImg.alt = item.alt;
-  lbCap.textContent = `${item.alt}  ·  ${lbIndex + 1} / ${lbItems.length}`;
+  lbCap.textContent = lbItems.length > 1 ? `${item.alt}  ·  ${lbIndex + 1} / ${lbItems.length}` : item.alt;
+  for (const d of [1, -1]) new Image().src = lbItems[(lbIndex + d + lbItems.length) % lbItems.length].src;   // neighbours ready for the next tap
 }
 function lbOpen(items, index, from) {
   lbItems = items;
   lbOpener = from || null;
+  lb.classList.toggle('single', items.length < 2);
   lbShow(index);
   lb.hidden = false;
   $('.lb-close', lb).focus();
@@ -339,7 +345,7 @@ const titleFromFile = src => src.split('/').pop().replace(/\.\w+$/, '').replace(
 function openPosterLightbox(floorId, index) {
   const f = FLOORS.find(x => x.id === floorId);
   const items = f.posters.map(p => p.asset
-    ? { src: assetURL(p.asset), alt: L(`${p.asset} · 占位海报`, `${p.asset} · placeholder poster`) }
+    ? { src: assetURL(p.asset), alt: ASSETS[p.asset].title }
     : { src: p.src, alt: titleFromFile(p.src) });
   lbOpen(items, index);
 }
@@ -347,6 +353,28 @@ $('.lb-close', lb).addEventListener('click', lbClose);
 $('.lb-prev', lb).addEventListener('click', () => lbShow(lbIndex - 1));
 $('.lb-next', lb).addEventListener('click', () => lbShow(lbIndex + 1));
 lb.addEventListener('click', e => { if (e.target === lb) lbClose(); });
+// swipe between pictures on touch screens
+let swipeX = null;
+lb.addEventListener('touchstart', e => { swipeX = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+lb.addEventListener('touchend', e => {
+  if (swipeX === null || lbItems.length < 2) return;
+  const dx = e.changedTouches[0].clientX - swipeX;
+  swipeX = null;
+  if (Math.abs(dx) > 50) lbShow(lbIndex + (dx < 0 ? 1 : -1));
+}, { passive: true });
+
+// ══ PRINT: the tower can't be printed, so print the plain page ══
+let printFrom3D = false;
+addEventListener('beforeprint', () => {
+  if (!is3D()) return;
+  printFrom3D = true;
+  setMode('simple', { remember: false });
+});
+addEventListener('afterprint', () => {
+  if (!printFrom3D) return;
+  printFrom3D = false;
+  setMode('3d', { remember: false });
+});
 
 // ══ KEYBOARD ══
 // keep Tab inside whatever dialog is open

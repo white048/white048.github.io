@@ -4,15 +4,15 @@
    ══════════════════════════════════════════════ */
 
 // Commissioned art (see the asset brief). `src: null` = not delivered yet,
-// so a generated placeholder poster is used. Drop the file into assets/posters/
-// and set `src` to switch.
+// so a poster is generated in code from `layout` + `title`. Drop the file
+// into assets/posters/ and set `src` to switch.
 export const ASSETS = {
-  A02: { src: null, layout: 'circle', accent: 'teal', seed: 11 },   // Huawei · digital twin
-  A03: { src: null, layout: 'halo',   accent: 'red',  seed: 23 },   // CSC8503 · delivery
-  A04: { src: null, layout: 'circle', accent: 'red',  seed: 31 },   // CSC8502 · light & water
-  A05: { src: null, layout: 'blocks', accent: 'red',  seed: 47 },   // CSC8507/08 · team engine
-  A06: { src: null, layout: 'split',  accent: 'red',  seed: 53 },   // CSC8501 · dilemma
-  A08: { src: null, layout: 'halo',   accent: 'teal', seed: 67 },   // Contact · message
+  A02: { src: null, layout: 'circle', accent: 'teal', seed: 11, title: 'DIGITAL TWIN',        sub: 'HUAWEI · PREDICTIVE MAINTENANCE' },
+  A03: { src: null, layout: 'halo',   accent: 'red',  seed: 23, title: 'SPECIAL DELIVERY',    sub: 'CSC8503 · PHYSICS · AI · NETCODE' },
+  A04: { src: null, layout: 'waves',  accent: 'red',  seed: 31, title: 'LIGHT & WATER',       sub: 'CSC8502 · PBR · IBL · HDR' },
+  A05: { src: null, layout: 'blocks', accent: 'red',  seed: 47, title: 'BUILT TOGETHER',      sub: 'CSC8507/08 · TEAM OF FOUR' },
+  A06: { src: null, layout: 'split',  accent: 'red',  seed: 53, title: 'COOPERATE OR DEFECT', sub: "CSC8501 · PRISONER'S DILEMMA" },
+  A08: { src: null, layout: 'chess',  accent: 'teal', seed: 67, title: 'YOUR MOVE',           sub: 'DONG YIJUN · GET IN TOUCH' },
 };
 
 /* Scroll progress p ∈ [0,1]:
