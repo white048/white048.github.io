@@ -82,6 +82,12 @@ a { color: inherit; }
 .floor-nav a b { font: 16px/1 var(--display); color: var(--red); letter-spacing: .06em; }
 .mode-3d .floor-nav a b { color: var(--rose); }
 .floor-nav a.is-active { border-bottom-color: var(--red); }
+.floor-nav a.nav-play b { font-size: 12px; }
+.side-card { display: block; margin-top: 10px; padding: 14px 16px; border: 2px solid currentColor; text-decoration: none; box-shadow: 5px 5px 0 var(--red); }
+.side-card b { display: block; font: 400 30px/1 var(--display); letter-spacing: .04em; }
+.side-card i { display: inline-block; margin-top: 8px; font: 700 14px/1 var(--body); font-style: normal; color: var(--red); }
+.side-card:hover { background: var(--ink); color: var(--paper); }
+.side-card:hover i { color: var(--rose); }
 .tools { display: flex; gap: 8px; align-items: center; }
 .tool {
   font: 600 13px/1 var(--body); color: inherit; background: transparent;

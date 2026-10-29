@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Token Forge — a print shop that writes like a language model</title>
+  <meta name="description" content="A three-station browser game about how language models read and write: cut text into tokens, pour attention, pull the sampling lever. 词元铸造厂：三个工位体验语言模型如何切词、注意、采样。" />
+  <meta name="theme-color" content="#1d1916" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Token Forge — a print shop that writes like a language model" />
+  <meta property="og:description" content="Cut text into tokens, pour attention, pull the sampling lever. A five-minute browser game by Dong Yijun." />
+  <meta property="og:image" content="https://white048.github.io/assets/og.jpg" />
+  <meta property="og:url" content="https://white048.github.io/games/token-forge/" />
+  <link rel="canonical" href="https://white048.github.io/games/token-forge/" />
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
+  <link rel="preload" href="../../fonts/bebas-neue-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="forge.css" />
+  <script>
+    // same language rule as the homepage: saved choice, ?lang=, else the browser's first language
+    (function () {
+      var d = document.documentElement, lang = null;
+      try { lang = localStorage.getItem('lang'); } catch (e) {}
+      var q = new URLSearchParams(location.search);
+      if (q.get('lang')) lang = q.get('lang');
+      if (lang !== 'en' && lang !== 'zh') {
+        var pref = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+        lang = /^zh/i.test(pref) ? 'zh' : 'en';
+      }
+      d.dataset.lang = lang;
+      d.lang = lang === 'en' ? 'en' : 'zh-CN';
+    })();
+  </script>
+</head>
+<body>
+  <header class="bar">
+    <a class="back" href="../../">← <span class="en" lang="en">Dong Yijun</span><span class="zh" lang="zh-CN">董一均主页</span></a>
+    <a class="brand" href="./" data-act="home">TOKEN <b>FORGE</b></a>
+    <button class="tool" id="langToggle" type="button" aria-label="Switch language / 切换语言"><span class="l-zh">中</span> / <span class="l-en">EN</span></button>
+  </header>
+  <main id="stage">
+    <noscript><p>Token Forge needs JavaScript. / 这个小游戏需要开启 JavaScript。</p></noscript>
+  </main>
+  <script type="module" src="forge.js"></script>
+</body>
+</html>
