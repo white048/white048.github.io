@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>404 · 这一层不存在 / No such floor</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <style>
+    @font-face { font-family: 'Bebas Neue'; src: url('/fonts/bebas-neue-latin-400.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: 'Special Elite'; src: url('/fonts/special-elite-latin-400.woff2') format('woff2'); font-display: swap; }
+    :root { --ink: #1d1916; --paper: #eadcc2; --red: #b23a25; --lo: #dccbab; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; display: grid; place-items: center; overflow: hidden;
+      background: var(--paper); color: var(--ink);
+      font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    }
+    body::before {
+      content: ""; position: fixed; left: 50%; top: 50%; width: 150vmax; aspect-ratio: 1; transform: translate(-50%, -50%);
+      background: repeating-conic-gradient(var(--lo) 0 8deg, transparent 8deg 16deg); z-index: -1;
+    }
+    main { text-align: center; display: grid; justify-items: center; gap: 12px; }
+    .no { font: clamp(120px, 30vw, 260px)/.85 'Bebas Neue', 'Arial Narrow', sans-serif; color: var(--red); }
+    .banner {
+      display: inline-block; background: var(--ink); color: var(--paper);
+      font: clamp(28px, 6vw, 52px)/1 'Bebas Neue', 'Arial Narrow', sans-serif; letter-spacing: .03em;
+      padding: .14em .4em .04em; clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+    }
+    p { margin: 0; font-family: 'Special Elite', 'Courier New', 'Microsoft YaHei', monospace; }
+    a {
+      margin-top: 10px; display: inline-block; text-decoration: none; font-weight: 700;
+      color: var(--paper); background: var(--red); padding: 11px 26px 11px 18px;
+      clip-path: polygon(0 0, 100% 0, 93% 100%, 0 100%);
+    }
+    a:hover, a:focus-visible { background: var(--ink); outline: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="no">404</div>
+    <div class="banner">NO SUCH FLOOR</div>
+    <p>这一层在档案馆里不存在。<br />This floor isn't in the archive.</p>
+    <a href="/">回到塔底 · Back to the tower</a>
+  </main>
+</body>
+</html>
