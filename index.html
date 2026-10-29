@@ -19,20 +19,66 @@
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Person",
-      "name": "Dong Yijun",
-      "alternateName": "董一均",
-      "url": "https://white048.github.io/",
-      "jobTitle": "Game Designer & Engineer",
-      "alumniOf": { "@type": "CollegeOrUniversity", "name": "Newcastle University" },
-      "hasCredential": {
-        "@type": "EducationalOccupationalCredential",
-        "name": "MSc Computer Game Engineering (Distinction)",
-        "credentialCategory": "degree",
-        "recognizedBy": { "@type": "CollegeOrUniversity", "name": "Newcastle University" }
-      },
-      "sameAs": ["https://github.com/white048"],
-      "knowsAbout": ["Game design", "C++", "Unity", "Three.js", "Serious games"]
+      "@graph": [
+        {
+          "@type": "VideoGame",
+          "name": "Until They Forget",
+          "url": "https://white048.github.io/#utf",
+          "description": "A critical-reflective serious game about cognitive bias: the player compresses the dead of one family into two-trait propaganda gods. MSc dissertation, Newcastle University.",
+          "author": {
+            "@id": "https://white048.github.io/#me"
+          },
+          "genre": [
+            "Serious game",
+            "Narrative"
+          ],
+          "gamePlatform": "PC",
+          "playMode": "SinglePlayer",
+          "image": "https://white048.github.io/assets/utf/she-chose-life.webp"
+        },
+        {
+          "@type": "VideoGame",
+          "name": "Token Forge",
+          "url": "https://white048.github.io/games/token-forge/",
+          "description": "A five-minute browser game about how language models work.",
+          "author": {
+            "@id": "https://white048.github.io/#me"
+          },
+          "gamePlatform": "Web browser",
+          "isAccessibleForFree": true
+        },
+        {
+          "@id": "https://white048.github.io/#me",
+          "@type": "Person",
+          "name": "Dong Yijun",
+          "alternateName": "董一均",
+          "url": "https://white048.github.io/",
+          "jobTitle": "Game Designer & Engineer",
+          "alumniOf": {
+            "@type": "CollegeOrUniversity",
+            "name": "Newcastle University"
+          },
+          "hasCredential": {
+            "@type": "EducationalOccupationalCredential",
+            "name": "MSc Computer Game Engineering (Distinction)",
+            "credentialCategory": "degree",
+            "recognizedBy": {
+              "@type": "CollegeOrUniversity",
+              "name": "Newcastle University"
+            }
+          },
+          "sameAs": [
+            "https://github.com/white048"
+          ],
+          "knowsAbout": [
+            "Game design",
+            "C++",
+            "Unity",
+            "Three.js",
+            "Serious games"
+          ]
+        }
+      ]
     }
   </script>
   <link rel="preload" href="fonts/bebas-neue-latin-400.woff2" as="font" type="font/woff2" crossorigin />
