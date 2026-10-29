@@ -22,7 +22,9 @@ export const ASSETS = {
    stop  — camera climb position (u) the floor's wall is laid out around
    Posters: off = angle around the tower from the floor's centre line (rad),
             dy = height offset, w/h = size in world units.
-   plate  — the round floor-number sign on the wall. */
+            portrait = { off, dy, w?, h? } — own spot on portrait screens, which
+            otherwise shrink the whole layout towards the view line (scene.js).
+   plate  — the round floor-number sign on the wall (takes `portrait` too). */
 export const FLOORS = [
   { id: 'top', range: [0, 0.07] },
 
@@ -35,7 +37,7 @@ export const FLOORS = [
     { src: 'assets/utf/martyred-by-the-system.webp',       w: 2.6, h: 1.46, off: 0,     dy: 2.55 },
   ] },
 
-  { id: 'huawei', range: [0.39, 0.53], stop: 0.37, plate: { no: '02', label: 'INTERNSHIP', off: -0.92, dy: 1.75 }, posters: [
+  { id: 'huawei', range: [0.39, 0.53], stop: 0.37, plate: { no: '02', label: 'INTERNSHIP', off: 0, dy: 2.35 }, posters: [
     { asset: 'A02',                                 w: 4.2, h: 2.36, off: 0 },
     { src: 'assets/huawei/w6-overview.webp', duotone: true, w: 3.0, h: 1.69, off: 0.92,  dy: 0.2 },
     { src: 'assets/huawei/model-iso.webp',   duotone: true, w: 2.7, h: 1.69, off: -0.92, dy: 0.2 },
@@ -48,7 +50,7 @@ export const FLOORS = [
     { asset: 'A06', w: 3.0, h: 1.69, off: 1.12,  dy: 0.2 },
   ] },
 
-  { id: 'art', range: [0.78, 0.87], stop: 0.8, plate: { no: '04', label: 'ART', off: -1.72, dy: 0.2 }, posters: [
+  { id: 'art', range: [0.78, 0.87], stop: 0.8, plate: { no: '04', label: 'ART', off: 0, dy: 2.75 }, posters: [
     { src: 'images/illust_01.jpg', w: 1.55, h: 1.55, off: -1.08, dy: 1.15 },
     { src: 'images/illust_02.jpg', w: 2.2,  h: 1.55, off: -0.36, dy: 1.15 },
     { src: 'images/illust_03.jpg', w: 1.55, h: 1.55, off: 0.36,  dy: 1.15 },
@@ -59,11 +61,13 @@ export const FLOORS = [
     { src: 'images/model_02.jpg',  w: 2.4,  h: 1.38, off: 1.08,  dy: -0.85 },
   ] },
 
-  { id: 'about', range: [0.92, 1.01], stop: 0.985, plate: { no: '05', label: 'CONTACT', off: -0.5, dy: 1.6 }, posters: [
-    { asset: 'A08', w: 3.4, h: 1.91, off: 0.12, dy: 2.4 },
-    { asset: 'A09', w: 2.8, h: 1.57, off: 1.45, dy: 0.5 },
+  // seen from the very end of the climb, where the standing piece fills the middle of the view
+  // and the handrail the lower right: pictures go above and beside its head (above it on a phone)
+  { id: 'about', range: [0.92, 1.01], stop: 0.985, plate: { no: '05', label: 'CONTACT', off: -0.3, dy: 0.3, portrait: { off: -0.2, dy: 0.1 } }, posters: [
+    { asset: 'A08', w: 3.0, h: 1.69, off: 0.1, dy: 4.6, portrait: { off: 0.97, dy: 5.6, w: 2.2, h: 1.24 } },
+    { asset: 'A09', w: 2.8, h: 1.57, off: 1.45, dy: 4.1, portrait: { off: 0.36, dy: 5.2, w: 3.4, h: 1.91 } },
   ] },
 ];
 
-// centre of a floor's caption range — where nav links scroll to
-export const floorCentre = f => Math.min(1, (f.range[0] + Math.min(f.range[1], 1)) / 2);
+// where nav links scroll to: the middle of a floor's caption range, or the very end for the last floor
+export const floorCentre = f => (f.range[1] >= 1 ? 1 : (f.range[0] + f.range[1]) / 2);
