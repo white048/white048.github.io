@@ -1,8 +1,8 @@
 /* ══════════════════════════════════════════════
-   placeholders.js — stand-in constructivist posters
-   Drawn on a canvas until the commissioned art (A02–A08)
-   arrives. Text-free apart from the asset tag, like the
-   real posters will be.
+   placeholders.js — constructivist posters drawn in code
+   Stand in for the commissioned art (A02–A08) until it
+   arrives: a cut-paper composition plus a title label in
+   the page's banner style. Call after postersReady().
    ══════════════════════════════════════════════ */
 
 export const PALETTE = {
@@ -37,6 +37,43 @@ function figure(x, cx, base, s, col) {
   x.fillStyle = col;
   x.beginPath(); x.arc(cx, base - 190 * s, 34 * s, 0, Math.PI * 2); x.fill();
   poly(x, col, [[cx - 46 * s, base - 150 * s], [cx + 46 * s, base - 150 * s], [cx + 70 * s, base], [cx - 70 * s, base]]);
+}
+
+// where each composition leaves room for the title label
+const LABEL_AT = {
+  halo:   { x: 548, y: 392, w: 452 },
+  circle: { x: 36,  y: 40,  w: 470 },
+  split:  { x: 36,  y: 48,  w: 520 },
+  blocks: { x: 36,  y: 40,  w: 396 },
+  waves:  { x: 36,  y: 40,  w: 470 },
+  chess:  { x: 572, y: 52,  w: 420 },
+};
+
+// ink banner with the title, red strip with the subtitle under it
+function label(x, at, title, sub) {
+  const pad = 22;
+  let size = 104;
+  x.font = `${size}px "Bebas Neue", "Arial Narrow", sans-serif`;
+  const tw = x.measureText(title).width;
+  if (tw > at.w - pad * 2) size = Math.floor(size * (at.w - pad * 2) / tw);
+  const bandH = Math.round(size * 1.02);
+  x.save();
+  x.translate(at.x, at.y);
+  x.rotate(-0.035);
+  poly(x, PALETTE.ink, [[0, 0], [at.w, 0], [at.w - bandH * 0.18, bandH], [0, bandH]]);
+  x.fillStyle = PALETTE.cream;
+  x.font = `${size}px "Bebas Neue", "Arial Narrow", sans-serif`;
+  x.textBaseline = 'alphabetic';
+  x.fillText(title, pad, bandH * 0.86);
+  if (sub) {
+    x.font = '22px "Special Elite", "Courier New", monospace';
+    const sw = Math.min(at.w - 20, x.measureText(sub).width + pad * 2);
+    poly(x, PALETTE.red, [[0, bandH + 6], [sw, bandH + 6], [sw - 8, bandH + 44], [0, bandH + 44]]);
+    x.fillStyle = PALETTE.cream;
+    x.textBaseline = 'middle';
+    x.fillText(sub, pad, bandH + 26, at.w - pad * 2);
+  }
+  x.restore();
 }
 
 const LAYOUTS = {
@@ -99,7 +136,58 @@ const LAYOUTS = {
   },
 };
 
-/** Draws a placeholder poster for asset `id` and returns the canvas. */
+// a sun over water, its reflection broken into bars (light & water)
+LAYOUTS.waves = function (x, r, accent) {
+  const P = PALETTE, cx = 720, cy = 230;
+  rays(x, cx, cy, 18, Math.PI, Math.PI, P.sand, P.cream);
+  x.fillStyle = P.cream; x.beginPath(); x.arc(cx, cy, 150, 0, Math.PI * 2); x.fill();
+  x.fillStyle = accent; x.beginPath(); x.arc(cx, cy, 112, 0, Math.PI * 2); x.fill();
+  x.fillStyle = P.teal; x.fillRect(0, 330, W, H - 330);
+  x.fillStyle = P.ink; x.fillRect(0, 324, W, 9);
+  const bands = [P.dark, P.grey, P.ink, P.sand];
+  for (let k = 0; k < 6; k++) {
+    const y = 360 + k * 36, ph = r() * 6;
+    x.fillStyle = bands[k % bands.length];
+    x.beginPath();
+    for (let px = 0; px <= W; px += 16) x.lineTo(px, y + Math.sin(px / 60 + ph) * 7);
+    for (let px = W; px >= 0; px -= 16) x.lineTo(px, y + 9 + Math.sin(px / 60 + ph) * 7);
+    x.fill();
+  }
+  for (let k = 0; k < 6; k++) {   // reflection: shorter, broken bars further down
+    const w = 220 - k * 30, y = 344 + k * 36;
+    x.fillStyle = accent;
+    for (let s = -w / 2; s < w / 2; s += 46) x.fillRect(cx + s, y, Math.min(34, w / 2 - s), 10);
+  }
+  poly(x, P.ink, [[0, 430], [330, 404], [330, 436], [0, 470]]);
+  figure(x, 230, 412, 0.75, P.ink);
+};
+
+// a pawn on a board in perspective, an arrow for the next move (contact)
+LAYOUTS.chess = function (x, r, accent) {
+  const P = PALETTE, vx = 512, vy = 150, top = 420;
+  rays(x, 330, 300, 16, 0, Math.PI * 2, P.sand, P.cream);
+  x.fillStyle = P.red; x.beginPath(); x.arc(330, 270, 168, 0, Math.PI * 2); x.fill();
+  const rows = [top, 452, 496, 576];
+  const colX = (i, y) => vx + i * 150 * (y - vy) / (H - vy);
+  for (let j = 0; j < rows.length - 1; j++) {
+    for (let i = -7; i < 7; i++) {
+      const y0 = rows[j], y1 = rows[j + 1];
+      poly(x, (i + j) % 2 ? P.ink : P.cream, [[colX(i, y0), y0], [colX(i + 1, y0), y0], [colX(i + 1, y1), y1], [colX(i, y1), y1]]);
+    }
+  }
+  x.fillStyle = P.ink; x.fillRect(0, top - 6, W, 8);
+  poly(x, P.dark, [[248, 456], [412, 456], [396, 424], [264, 424]]);
+  poly(x, P.dark, [[282, 426], [378, 426], [350, 322], [310, 322]]);
+  x.fillStyle = P.dark; x.fillRect(292, 306, 76, 20);
+  x.beginPath(); x.arc(330, 264, 46, 0, Math.PI * 2); x.fill();
+  x.save();
+  x.translate(510, 372); x.rotate(-0.55);
+  x.fillStyle = accent; x.fillRect(0, -16, 200, 32);
+  poly(x, accent, [[196, -44], [262, 0], [196, 44]]);
+  x.restore();
+};
+
+/** Draws the poster for asset `id` and returns the canvas. */
 export function placeholderCanvas(id, spec) {
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
@@ -113,14 +201,18 @@ export function placeholderCanvas(id, spec) {
     x.fillStyle = `rgba(29,25,22,${(r() * 0.05).toFixed(3)})`;
     x.fillRect(r() * W, r() * H, 1 + r() * 3, 1 + r() * 3);
   }
-  // asset tag, bottom right
-  x.fillStyle = PALETTE.ink;
-  x.fillRect(W - 262, H - 52, 246, 36);
-  x.fillStyle = PALETTE.cream;
-  x.font = '22px "Special Elite", "Courier New", monospace';
-  x.textBaseline = 'middle';
-  x.fillText(`${id} · PLACEHOLDER`, W - 250, H - 33);
+  if (spec.title) label(x, LABEL_AT[spec.layout] || LABEL_AT.halo, spec.title, spec.sub);
   return c;
+}
+
+/** Resolves once the poster fonts can be drawn on a canvas. */
+let fontsPromise = null;
+export function postersReady() {
+  fontsPromise ||= Promise.all([
+    document.fonts.load('104px "Bebas Neue"'),
+    document.fonts.load('22px "Special Elite"'),
+  ]).catch(() => {});
+  return fontsPromise;
 }
 
 const urlCache = {};

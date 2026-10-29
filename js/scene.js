@@ -6,7 +6,7 @@
    ══════════════════════════════════════════════ */
 import * as THREE from 'three';
 import { ASSETS } from './floors.js';
-import { placeholderCanvas, PALETTE as P } from './placeholders.js';
+import { placeholderCanvas, postersReady, PALETTE as P } from './placeholders.js';
 
 // ── Tower dimensions ──
 const TURNS = 5, STEPS_PER_TURN = 30, RISE = 0.2;
@@ -28,6 +28,7 @@ export function createScene({
   onPick = () => {},       // a poster was clicked: ({ floor, index })
   onSlow = () => {},       // still struggling at the lowest quality
   onLost = () => {},       // WebGL context lost
+  onEgg = () => {},        // the standing piece at the top was clicked
 }) {
   // seeded random so the layout is stable between visits
   let seed = 7;
@@ -245,7 +246,7 @@ export function createScene({
           mesh.material = p.duotone ? duotoneMat(tex) : new THREE.MeshBasicMaterial({ map: tex });
         };
         if (src) texLoader.load(src, apply);
-        else apply(new THREE.CanvasTexture(placeholderCanvas(p.asset, asset)));
+        else postersReady().then(() => apply(new THREE.CanvasTexture(placeholderCanvas(p.asset, asset))));
       }
     };
   }
@@ -438,6 +439,23 @@ export function createScene({
     topHalo.position.copy(head).addScaledVector(head.clone().sub(end).normalize(), 1.6);
     topHalo.lookAt(end);
   }
+  // clicked, it hops and turns once on the spot
+  const topBaseY = topPiece.position.y, topBaseQ = topPiece.quaternion.clone();
+  const qSpin = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
+  let hopT0 = null;
+  function hopPiece(t) {
+    if (hopT0 !== null) return;
+    hopT0 = t;
+    onEgg();
+  }
+  function animateHop(t) {
+    if (hopT0 === null) return;
+    const u = Math.min(1, (t - hopT0) / 1.1);
+    topPiece.position.y = topBaseY + Math.sin(Math.PI * u) * 0.8;
+    topPiece.quaternion.copy(topBaseQ).multiply(qSpin.setFromAxisAngle(UP, Math.PI * 2 * THREE.MathUtils.smootherstep(u, 0, 1)));
+    if (u >= 1) hopT0 = null;
+  }
+  const isPiecePart = o => { for (; o; o = o.parent) if (o === topPiece) return true; return false; };
 
   // ── Floating paper sheets in the stairwell (the CV pages) ──
   const papers = [];
@@ -515,7 +533,7 @@ export function createScene({
   addEventListener('resize', resize);
   resize();
 
-  // ── Picking: posters are clickable once the climb has started ──
+  // ── Picking: posters (and the piece at the top) are clickable once the climb has started ──
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2(), pointerPx = new THREE.Vector2();
   let hovered = null, mouseSeen = false, climbing = false, pickTick = 0;
@@ -523,14 +541,16 @@ export function createScene({
     if (!climbing) return null;
     ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObjects(pickables, false)[0];
+    const hit = raycaster.intersectObjects(prog > 0.9 ? [...pickables, topPiece] : pickables, true)[0];
     return hit && hit.distance < 16 ? hit.object : null;
   }
   const onCanvasMove = e => { if (e.pointerType === 'mouse') { pointerPx.set(e.clientX, e.clientY); mouseSeen = true; } };
   const onCanvasLeave = () => { mouseSeen = false; };
   const onCanvasClick = e => {
     const hit = pickAt(e.clientX, e.clientY);
-    if (hit) onPick({ ...hit.userData });
+    if (!hit) return;
+    if (isPiecePart(hit)) hopPiece(time);
+    else onPick({ ...hit.userData });
   };
   canvas.addEventListener('pointermove', onCanvasMove);
   canvas.addEventListener('pointerleave', onCanvasLeave);
@@ -593,6 +613,7 @@ export function createScene({
     const blend = THREE.MathUtils.smoothstep(prog, 0.07, 0.15);
     mouseS.lerp(mouse, 0.05);
     animatePiece(fall, t);
+    animateHop(t);
     heroPose(fall * 0.5, ...hp);
     climbPose(progToClimb(prog), ...cp);
     tmpP.lerpVectors(hp[0], cp[0], blend);

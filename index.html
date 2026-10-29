@@ -37,6 +37,7 @@
   </script>
   <link rel="preload" href="fonts/bebas-neue-latin-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/site.css" />
+  <noscript><style>img[data-ph] { display: none; }</style></noscript>
   <!-- the import map must come before any module fetch, including the modulepreloads below -->
   <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
   <script>
@@ -50,13 +51,19 @@
       var gl = false;
       try { var c = document.createElement('canvas'); gl = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}
       var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var conn = navigator.connection, mem = navigator.deviceMemory;
+      var lite = !!(conn && conn.saveData) || (mem && mem <= 2);   // data saver or a low-memory device
       if (!gl) mode = 'simple';
-      else if (mode !== '3d' && mode !== 'simple') mode = calm ? 'simple' : '3d';
+      else if (mode !== '3d' && mode !== 'simple') mode = calm || lite ? 'simple' : '3d';
       d.className = 'mode-' + mode;
       if (mode === '3d') {   // start fetching the tower's modules while the page parses
         ['vendor/three/three.module.min.js', 'js/scene.js', 'js/floors.js', 'js/placeholders.js'].forEach(function (href) {
           var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = href; document.head.appendChild(l);
         });
+      }
+      if (lang !== 'en' && lang !== 'zh') {   // first visit: follow the browser's preferred language
+        var pref = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+        lang = /^zh/i.test(pref) ? 'zh' : 'en';
       }
       lang = lang === 'en' ? 'en' : 'zh';
       d.dataset.lang = lang;
@@ -162,7 +169,7 @@
         <div class="gallery">
           <img src="assets/utf/gameplay-listen.webp" alt="Gameplay: listening to a witness" width="1600" height="898" loading="lazy" data-zoom />
           <img src="assets/utf/gameplay-poster.webp" alt="Gameplay: a god poster rises" width="1600" height="898" loading="lazy" data-zoom />
-          <img src="assets/utf/he-fought-for-grace.webp" alt="Poster: HE FOUGHT FOR GRACE" width="1600" height="900" loading="lazy" data-zoom />
+          <img src="assets/utf/a-fathers-broken-heart.webp" alt="Poster: A FATHER'S BROKEN HEART" width="1600" height="900" loading="lazy" data-zoom />
           <img src="assets/utf/a-mothers-grief.webp" alt="Poster: A MOTHER'S GRIEF" width="1600" height="900" loading="lazy" data-zoom />
           <img src="assets/utf/the-doctor-who-never-gave-up.webp" alt="Poster: THE DOCTOR WHO NEVER GAVE UP" width="1600" height="900" loading="lazy" data-zoom />
           <img src="assets/utf/martyred-by-the-system.webp" alt="Poster: MARTYRED BY THE SYSTEM" width="1600" height="900" loading="lazy" data-zoom />
@@ -187,7 +194,7 @@
       </div>
       <div class="floor-body" id="huawei-body" tabindex="-1">
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
-        <figure class="lead-img"><img data-ph="A02" alt="Poster placeholder A02: digital twin" width="1024" height="576" data-zoom /></figure>
+        <figure class="lead-img"><img data-ph="A02" alt="Poster: DIGITAL TWIN" width="1024" height="576" data-zoom /></figure>
         <p class="en lead" lang="en">A predictive-maintenance and digital-twin platform for a fleet of turbofan engines, built end to end on the public NASA C-MAPSS dataset: data pipeline, model training on Huawei Cloud, an inference API and a 3D web dashboard.</p>
         <p class="zh lead" lang="zh-CN">为一组涡扇发动机机队搭建的预测性维护与数字孪生平台，基于 NASA C-MAPSS 公开数据集端到端完成：数据流水线、华为云上的模型训练、推理接口，以及 3D 网页大屏。</p>
         <h3><span class="en" lang="en">What I did</span><span class="zh" lang="zh-CN">我做了什么</span></h3>
@@ -225,7 +232,7 @@
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
 
         <article class="exhibit">
-          <img data-ph="A03" alt="Poster placeholder A03" width="1024" height="576" data-zoom />
+          <img data-ph="A03" alt="Poster: SPECIAL DELIVERY" width="1024" height="576" data-zoom />
           <div>
             <p class="meta">CSC8503 · 2025.11–12 · <span class="en" lang="en">Solo</span><span class="zh" lang="zh-CN">独立开发</span></p>
             <h3><span class="en" lang="en">Real-time Game Prototype</span><span class="zh" lang="zh-CN">实时游戏原型</span></h3>
@@ -240,7 +247,7 @@
         </article>
 
         <article class="exhibit">
-          <img data-ph="A04" alt="Poster placeholder A04" width="1024" height="576" data-zoom />
+          <img data-ph="A04" alt="Poster: LIGHT &amp; WATER" width="1024" height="576" data-zoom />
           <div>
             <p class="meta">CSC8502 · 2025.10–11 · <span class="en" lang="en">Solo</span><span class="zh" lang="zh-CN">独立开发</span></p>
             <h3><span class="en" lang="en">Real-time Graphics Rendering</span><span class="zh" lang="zh-CN">实时图形渲染</span></h3>
@@ -255,7 +262,7 @@
         </article>
 
         <article class="exhibit">
-          <img data-ph="A05" alt="Poster placeholder A05" width="1024" height="576" data-zoom />
+          <img data-ph="A05" alt="Poster: BUILT TOGETHER" width="1024" height="576" data-zoom />
           <div>
             <p class="meta">CSC8507/08 · 2026.01–03 · <span class="en" lang="en">Team of 4 · architecture &amp; programming</span><span class="zh" lang="zh-CN">4 人团队 · 架构与编程</span></p>
             <h3><span class="en" lang="en">Team Game Development</span><span class="zh" lang="zh-CN">团队游戏开发</span></h3>
@@ -266,7 +273,7 @@
         </article>
 
         <article class="exhibit">
-          <img data-ph="A06" alt="Poster placeholder A06" width="1024" height="576" data-zoom />
+          <img data-ph="A06" alt="Poster: COOPERATE OR DEFECT" width="1024" height="576" data-zoom />
           <div>
             <p class="meta">CSC8501 · 2025.09–10 · <span class="en" lang="en">Solo</span><span class="zh" lang="zh-CN">独立开发</span></p>
             <h3><span class="en" lang="en">Iterated Prisoner's Dilemma Simulator</span><span class="zh" lang="zh-CN">迭代囚徒困境模拟器</span></h3>

@@ -246,6 +246,7 @@ html[data-lang="zh"] .tool--lang .l-zh, html[data-lang="en"] .tool--lang .l-en {
 .lb-caption { margin: 12px 0 0; font: 14px var(--type); text-align: center; }
 .lb-btn { position: absolute; font: 34px/1 var(--body); color: var(--paper); background: transparent; border: 0; cursor: pointer; padding: 10px 16px; }
 .lb-btn:hover { color: var(--rose); }
+.lightbox.single .lb-prev, .lightbox.single .lb-next { display: none; }
 .lb-close { top: max(10px, env(safe-area-inset-top, 0px)); right: var(--gutter-r); }
 .lb-prev { left: var(--gutter-l); top: 50%; transform: translateY(-50%); }
 .lb-next { right: var(--gutter-r); top: 50%; transform: translateY(-50%); }
@@ -377,6 +378,22 @@ html[data-lang="zh"] .tool--lang .l-zh, html[data-lang="en"] .tool--lang .l-en {
   .tools { gap: 5px; }
   .tool { font-size: 12px; padding: 6px 7px; white-space: nowrap; }
   .tool--lang .sep { margin: 0 2px; }
+}
+
+/* ══ PRINT: always the plain page (main.js switches modes around printing) ══ */
+@media print {
+  .topbar, #scene, .rail, .scroll-cue, .loader, .to-top, .toast, #scrim, .lightbox, .skip, #track,
+  .actions, .panel-close, .yt-play, .hint { display: none !important; }
+  html, body { background: #fff !important; }
+  .mode-simple .floor--top { padding-top: 0; }
+  .mode-simple .floor--top::before, .mode-simple .floor--top::after { display: none; }
+  .floor-head, .exhibit, figure, .gallery img, .facts, .skills, li { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+  .gallery { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .yt { aspect-ratio: auto; display: block; background: none; border: 1px solid var(--ink-2); padding: 8px 10px; }
+  .yt a { position: static; color: var(--ink); }
+  .yt a::before { content: "Video: "; }
+  .yt a::after, .links a::after, .contacts a[href^="http"]::after { content: " (" attr(href) ")"; font-weight: 400; color: var(--ink-2); }
 }
 
 @media (prefers-reduced-motion: reduce) {
