@@ -4,17 +4,41 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>董一均 Dong Yijun — 游戏设计与开发</title>
-  <meta name="description" content="董一均 Dong Yijun：游戏设计师与工程师。毕业设计《Until They Forget》、华为数字孪生实习、C++ 引擎系统课程项目与插画。" />
+  <meta name="description" content="董一均 Dong Yijun：游戏设计师与工程师，纽卡斯尔大学计算机游戏工程硕士（Distinction）。毕业设计《Until They Forget》、华为数字孪生实习、C++ 引擎系统课程项目与插画。" />
   <meta name="theme-color" content="#1d1916" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Dong Yijun 董一均 — Game Designer & Engineer" />
-  <meta property="og:description" content="Until They Forget, a serious game about cognitive bias · Huawei digital-twin internship · C++ engine systems · illustration." />
+  <meta property="og:description" content="MSc Computer Game Engineering (Distinction), Newcastle University · Until They Forget, a serious game about cognitive bias · Huawei digital-twin internship · C++ engine systems · illustration." />
   <meta property="og:image" content="https://white048.github.io/assets/og.jpg" />
   <meta property="og:url" content="https://white048.github.io/" />
   <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://white048.github.io/" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Dong Yijun",
+      "alternateName": "董一均",
+      "url": "https://white048.github.io/",
+      "jobTitle": "Game Designer & Engineer",
+      "alumniOf": { "@type": "CollegeOrUniversity", "name": "Newcastle University" },
+      "hasCredential": {
+        "@type": "EducationalOccupationalCredential",
+        "name": "MSc Computer Game Engineering (Distinction)",
+        "credentialCategory": "degree",
+        "recognizedBy": { "@type": "CollegeOrUniversity", "name": "Newcastle University" }
+      },
+      "sameAs": ["https://github.com/white048"],
+      "knowsAbout": ["Game design", "C++", "Unity", "Three.js", "Serious games"]
+    }
+  </script>
   <link rel="preload" href="fonts/bebas-neue-latin-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/site.css" />
+  <!-- the import map must come before any module fetch, including the modulepreloads below -->
+  <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
   <script>
     // Decide 3D vs simple before first paint, so nothing flashes.
     (function () {
@@ -29,12 +53,16 @@
       if (!gl) mode = 'simple';
       else if (mode !== '3d' && mode !== 'simple') mode = calm ? 'simple' : '3d';
       d.className = 'mode-' + mode;
+      if (mode === '3d') {   // start fetching the tower's modules while the page parses
+        ['vendor/three/three.module.min.js', 'js/scene.js', 'js/floors.js', 'js/placeholders.js'].forEach(function (href) {
+          var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = href; document.head.appendChild(l);
+        });
+      }
       lang = lang === 'en' ? 'en' : 'zh';
       d.dataset.lang = lang;
       d.lang = lang === 'en' ? 'en' : 'zh-CN';
     })();
   </script>
-  <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
 </head>
 <body>
   <a class="skip" href="#utf" data-mode-set="simple">
@@ -79,11 +107,15 @@
           <span class="en" lang="en">Game designer &amp; engineer — I build systems that make players think.</span>
           <span class="zh" lang="zh-CN">游戏设计师与工程师——做让玩家思考的系统。</span>
         </p>
+        <p class="cred">
+          <span class="en" lang="en">MSc Computer Game Engineering · Newcastle University</span>
+          <span class="zh" lang="zh-CN">纽卡斯尔大学 · 计算机游戏工程硕士</span>
+          <b class="stamp">Distinction</b>
+        </p>
         <div class="actions">
           <a class="btn btn--red" href="#utf" data-floor-link="utf"><span class="en" lang="en">View work</span><span class="zh" lang="zh-CN">查看作品</span></a>
           <a class="btn" href="#about" data-floor-link="about"><span class="en" lang="en">Contact</span><span class="zh" lang="zh-CN">联系我</span></a>
         </div>
-        <p class="scroll-hint" aria-hidden="true"><span class="en" lang="en">Scroll to climb ↓</span><span class="zh" lang="zh-CN">向下滚动，开始攀登 ↓</span></p>
       </div>
     </section>
 
@@ -96,7 +128,10 @@
           <span class="en" lang="en">A critical-reflective serious game about cognitive bias. Unity · 2026 · Coming to Steam</span>
           <span class="zh" lang="zh-CN">一款关于认知偏差的批判性严肃游戏。Unity · 2026 · 筹备上架 Steam</span>
         </p>
-        <button class="btn btn--open" type="button" data-open="utf"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
+        <div class="actions">
+          <button class="btn btn--open btn--red" type="button" data-open="utf"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
+          <button class="btn btn--next" type="button" data-next aria-label="Next floor / 下一层"><span class="en" lang="en">Next floor ↓</span><span class="zh" lang="zh-CN">下一层 ↓</span></button>
+        </div>
       </div>
       <div class="floor-body" id="utf-body" tabindex="-1">
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
@@ -119,6 +154,7 @@
 
         <dl class="facts">
           <dt><span class="en" lang="en">Role</span><span class="zh" lang="zh-CN">角色</span></dt><dd><span class="en" lang="en">Solo — design, writing, programming</span><span class="zh" lang="zh-CN">独立完成：设计、文案、程序</span></dd>
+          <dt><span class="en" lang="en">Mark</span><span class="zh" lang="zh-CN">成绩</span></dt><dd><span class="en" lang="en">90 / 100 (in UK marking, 70+ is a Distinction)</span><span class="zh" lang="zh-CN">90 / 100（英国评分 70 分以上即为 Distinction）</span></dd>
           <dt><span class="en" lang="en">Length</span><span class="zh" lang="zh-CN">时长</span></dt><dd><span class="en" lang="en">20–30 minutes, six acts and a finale</span><span class="zh" lang="zh-CN">20–30 分钟，六幕加终章</span></dd>
           <dt>Steam</dt><dd><span class="en" lang="en">Store page in preparation</span><span class="zh" lang="zh-CN">商店页筹备中</span></dd>
         </dl>
@@ -144,7 +180,10 @@
           <span class="en" lang="en">Digital Engineer Intern (online), Huawei · Summer 2026 · predictive maintenance &amp; a 3D twin platform</span>
           <span class="zh" lang="zh-CN">华为数字化工程师实习（线上）· 2026 夏 · 工业设备预测性维护与数字孪生平台</span>
         </p>
-        <button class="btn btn--open" type="button" data-open="huawei"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
+        <div class="actions">
+          <button class="btn btn--open btn--red" type="button" data-open="huawei"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
+          <button class="btn btn--next" type="button" data-next aria-label="Next floor / 下一层"><span class="en" lang="en">Next floor ↓</span><span class="zh" lang="zh-CN">下一层 ↓</span></button>
+        </div>
       </div>
       <div class="floor-body" id="huawei-body" tabindex="-1">
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
@@ -177,7 +216,10 @@
           <span class="en" lang="en">Four C++ projects, solo and team — physics, AI, networking and rendering.</span>
           <span class="zh" lang="zh-CN">四个 C++ 项目，独立与团队——物理、AI、网络同步与渲染。</span>
         </p>
-        <button class="btn btn--open" type="button" data-open="coursework"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
+        <div class="actions">
+          <button class="btn btn--open btn--red" type="button" data-open="coursework"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
+          <button class="btn btn--next" type="button" data-next aria-label="Next floor / 下一层"><span class="en" lang="en">Next floor ↓</span><span class="zh" lang="zh-CN">下一层 ↓</span></button>
+        </div>
       </div>
       <div class="floor-body" id="coursework-body" tabindex="-1">
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
@@ -245,7 +287,10 @@
           <span class="en" lang="en">Anime-style illustration in Photoshop and beginner 3D modelling in Blender.</span>
           <span class="zh" lang="zh-CN">Photoshop 二次元插画与 Blender 入门建模练习。</span>
         </p>
-        <button class="btn btn--open" type="button" data-open="art"><span class="en" lang="en">Open gallery</span><span class="zh" lang="zh-CN">打开画廊</span></button>
+        <div class="actions">
+          <button class="btn btn--open btn--red" type="button" data-open="art"><span class="en" lang="en">Open gallery</span><span class="zh" lang="zh-CN">打开画廊</span></button>
+          <button class="btn btn--next" type="button" data-next aria-label="Next floor / 下一层"><span class="en" lang="en">Next floor ↓</span><span class="zh" lang="zh-CN">下一层 ↓</span></button>
+        </div>
       </div>
       <div class="floor-body" id="art-body" tabindex="-1">
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
@@ -272,14 +317,23 @@
           <span class="zh" lang="zh-CN">掉下去的那枚棋子，在这里等你。</span>
         </p>
         <p class="contact-line"><a href="mailto:1790631073@qq.com">1790631073@qq.com</a> · <a href="https://github.com/white048" target="_blank" rel="noopener">github.com/white048</a></p>
-        <button class="btn btn--open" type="button" data-open="about"><span class="en" lang="en">About me</span><span class="zh" lang="zh-CN">关于我</span></button>
+        <div class="actions">
+          <button class="btn btn--open btn--red" type="button" data-open="about"><span class="en" lang="en">About me</span><span class="zh" lang="zh-CN">关于我</span></button>
+          <button class="btn" type="button" data-copy-email="1790631073@qq.com"><span class="en" lang="en">Copy email</span><span class="zh" lang="zh-CN">复制邮箱</span></button>
+        </div>
       </div>
       <div class="floor-body" id="about-body" tabindex="-1">
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
-        <p class="en lead" lang="en">I'm Dong Yijun, a game designer and engineer, and I recently finished the MSc in Computer Game Engineering at Newcastle University. My dissertation game, <em>Until They Forget</em>, turns a cognitive-bias brief into a narrative in which the player becomes the propagandist, and I'm preparing it for Steam.</p>
+        <p class="en lead" lang="en">I'm Dong Yijun, a game designer and engineer. I completed the MSc in Computer Game Engineering at Newcastle University with Distinction. My dissertation game, <em>Until They Forget</em>, turns a cognitive-bias brief into a narrative in which the player becomes the propagandist, and I'm preparing it for Steam.</p>
         <p class="en" lang="en">I work across C++ engine systems (physics, AI, networking, PBR rendering), data-driven Unity architecture and web 3D, most recently a digital-twin platform during my Huawei internship. I'm interested in games as instruments for reflection, and in the research questions behind them.</p>
-        <p class="zh lead" lang="zh-CN">我是董一均，游戏设计师与工程师，刚完成纽卡斯尔大学计算机游戏工程硕士课程。毕业设计《Until They Forget》把"认知偏差训练"的命题做成了一部让玩家亲手成为宣传者的叙事游戏，正在筹备上架 Steam。</p>
+        <p class="zh lead" lang="zh-CN">我是董一均，游戏设计师与工程师，以 Distinction（优异）成绩完成了纽卡斯尔大学计算机游戏工程硕士学业。毕业设计《Until They Forget》把"认知偏差训练"的命题做成了一部让玩家亲手成为宣传者的叙事游戏，正在筹备上架 Steam。</p>
         <p class="zh" lang="zh-CN">技术上我横跨 C++ 引擎系统（物理、AI、网络同步、PBR 渲染）、数据驱动的 Unity 架构与 Web 3D，最近一次是华为实习中的数字孪生平台。我关心游戏作为反思工具的可能性，以及它背后的研究问题。</p>
+
+        <h3><span class="en" lang="en">Education</span><span class="zh" lang="zh-CN">教育背景</span></h3>
+        <dl class="facts">
+          <dt>2025–2026</dt>
+          <dd><span class="en" lang="en"><b>MSc Computer Game Engineering, Newcastle University</b> — Distinction. Overall average 80.9; dissertation 90.</span><span class="zh" lang="zh-CN"><b>纽卡斯尔大学 · 计算机游戏工程硕士</b>，Distinction（优异）。总均分 80.9，毕业设计 90 分。</span></dd>
+        </dl>
 
         <h3><span class="en" lang="en">Skills</span><span class="zh" lang="zh-CN">技能</span></h3>
         <dl class="skills">
@@ -318,6 +372,30 @@
     <button class="lb-btn lb-next" type="button" aria-label="Next">›</button>
     <p class="lb-caption"></p>
   </div>
+
+  <!-- scroll cue: only on the top floor of the 3D tower -->
+  <div class="scroll-cue" id="scrollCue" aria-hidden="true">
+    <span class="cue-mouse"><i></i></span>
+    <span class="cue-swipe"><i></i></span>
+    <span class="cue-text">
+      <span class="cue-fine"><span class="en" lang="en">Scroll the mouse wheel to climb the tower</span><span class="zh" lang="zh-CN">滚动鼠标滚轮，沿螺旋楼梯向上</span></span>
+      <span class="cue-coarse"><span class="en" lang="en">Swipe up to climb the tower</span><span class="zh" lang="zh-CN">手指上滑，沿螺旋楼梯向上</span></span>
+      <small class="cue-fine"><span class="en" lang="en">or press ↓ to jump a floor</span><span class="zh" lang="zh-CN">也可以按 ↓ 键逐层跳转</span></small>
+    </span>
+  </div>
+
+  <!-- floor progress rail, built from the floor list in main.js -->
+  <nav class="rail" id="rail" aria-label="Floor progress / 楼层进度">
+    <span class="rail-track"><span class="rail-fill" id="railFill"></span></span>
+  </nav>
+
+  <div class="loader" aria-hidden="true">
+    <span class="loader-disc"></span>
+    <span class="en" lang="en">Building the archive…</span><span class="zh" lang="zh-CN">正在搭建档案馆…</span>
+  </div>
+
+  <button class="to-top" id="toTop" type="button" aria-label="Back to top / 回到顶部">↑</button>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script type="module" src="js/main.js"></script>
 </body>

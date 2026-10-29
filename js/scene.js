@@ -22,7 +22,13 @@ const climbAngle = u => START_A + u * (TURNS - 1.2) * Math.PI * 2;
 const DWELL = 0.015;
 const CLIMB_FROM = 0.12;   // progress where the climb starts (after the fall)
 
-export function createScene({ canvas, floors, mobile = false, onProgress = () => {} }) {
+export function createScene({
+  canvas, floors, mobile = false,
+  onProgress = () => {},   // every frame, with the smoothed scroll progress
+  onPick = () => {},       // a poster was clicked: ({ floor, index })
+  onSlow = () => {},       // still struggling at the lowest quality
+  onLost = () => {},       // WebGL context lost
+}) {
   // seeded random so the layout is stable between visits
   let seed = 7;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -186,14 +192,50 @@ export function createScene({ canvas, floors, mobile = false, onProgress = () =>
     posterRects.push({ a, y, half: Math.asin(Math.min(1, (w / 2 + 0.25) / r)), hh: h / 2 + 0.3 });
     return pic;
   }
+  // round floor-number sign, drawn once the display font is ready
+  function plateTexture(no, label) {
+    const c = document.createElement('canvas'); c.width = c.height = 512;
+    const x = c.getContext('2d');
+    x.fillStyle = P.cream; x.beginPath(); x.arc(256, 256, 250, 0, Math.PI * 2); x.fill();
+    x.fillStyle = P.red; x.beginPath(); x.arc(256, 256, 222, 0, Math.PI * 2); x.fill();
+    x.fillStyle = P.ink; x.fillRect(40, 330, 432, 70);
+    x.fillStyle = P.cream; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+    x.font = '250px "Bebas Neue", "Arial Narrow", sans-serif';
+    x.fillText(no, 256, 318);
+    x.font = '48px "Special Elite", "Courier New", monospace';
+    x.fillText(label, 256, 380);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+  const pickables = [];
   for (const f of floors) {
     if (!f.posters) continue;
     const base = wallHit(f.stop);
-    const pics = f.posters.map(p => ({ p, mesh: addPoster(base.a + (p.off || 0), base.y + (p.dy || 0), p.w, p.h) }));
+    const pics = f.posters.map((p, index) => {
+      const mesh = addPoster(base.a + (p.off || 0), base.y + (p.dy || 0), p.w, p.h);
+      mesh.userData = { floor: f.id, index };
+      pickables.push(mesh);
+      return { p, mesh };
+    });
+    let plate = null;
+    if (f.plate) {
+      const a = base.a + f.plate.off, y = base.y + f.plate.dy, r = R_BOOK - 0.12;
+      plate = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.15), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }));
+      plate.position.set(Math.cos(a) * r, y, Math.sin(a) * r);
+      plate.lookAt(0, y, 0);
+      scene.add(plate);
+      posterRects.push({ a, y, half: Math.asin(0.85 / r), hh: 0.85 });
+    }
     let loaded = false;
     loaders[f.id] = () => {
       if (loaded) return;
       loaded = true;
+      if (plate) {
+        document.fonts.load('250px "Bebas Neue"').catch(() => {}).finally(() => {
+          plate.material = new THREE.MeshBasicMaterial({ map: plateTexture(f.plate.no, f.plate.label), transparent: true, alphaTest: 0.5 });
+        });
+      }
       for (const { p, mesh } of pics) {
         const asset = p.asset ? ASSETS[p.asset] : null;
         const src = asset ? asset.src : p.src;
@@ -295,34 +337,57 @@ export function createScene({ canvas, floors, mobile = false, onProgress = () =>
   const profile = [[0, 0], [0.62, 0], [0.63, 0.07], [0.56, 0.12], [0.6, 0.2], [0.47, 0.28], [0.36, 0.42], [0.29, 0.7], [0.24, 1.05],
     [0.38, 1.12], [0.42, 1.18], [0.31, 1.24], [0.2, 1.3], [0.17, NECK_TOP], [0, NECK_TOP]].map(([r, y]) => new THREE.Vector2(r, y));
   const bodyGeo = facet(new THREE.LatheGeometry(profile, 16));
-  const headGeo = new THREE.IcosahedronGeometry(0.55, 1); headGeo.scale(0.82, 1.1, 0.95);
-  const headFacets = facet(headGeo);
+  // carved head: a sphere pushed into a flat face plane with a nose wedge,
+  // eye sockets, brow, mouth groove, chin and a narrowing jaw (front = +z)
+  function sculptHead() {
+    const R = 0.55, g = new THREE.IcosahedronGeometry(R, 3);
+    const pos = g.attributes.position, p = new THREE.Vector3();
+    const lerp = THREE.MathUtils.lerp;
+    for (let i = 0; i < pos.count; i++) {
+      p.fromBufferAttribute(pos, i).divideScalar(R);
+      let x = p.x * 0.8, y = p.y * 1.12, z = p.z * 0.95;
+      const nx = Math.abs(x);
+      if (z > 0) {
+        z = Math.min(z, 0.7 + 0.1 * (1 - nx / 0.8));   // flatten into a face plane
+        if (nx < 0.13 && y > -0.3 && y < 0.2) {         // nose: bridge to tip
+          const out = y > -0.2 ? lerp(0.26, 0.05, (y + 0.2) / 0.4) : lerp(0.26, 0, (-0.2 - y) / 0.1);
+          z += out * (1 - nx / 0.13);
+        }
+        const eye = Math.hypot(nx - 0.27, y - 0.1);
+        if (eye < 0.14) z -= 0.07 * (1 - eye / 0.14);     // eye sockets
+        if (y > 0.2 && y < 0.32 && nx < 0.45) z += 0.04;  // brow
+        if (Math.abs(y + 0.4) < 0.035 && nx < 0.2) z -= 0.04;   // mouth
+        if (y < -0.48 && nx < 0.3) z += 0.07 * (1 - nx / 0.3);  // chin
+      } else {
+        z *= 1.08;   // fuller back of the skull
+      }
+      if (y < -0.3) x *= 1 - (-y - 0.3) * 0.5;   // jaw narrows towards the chin
+      pos.setXYZ(i, x * R, y * R, z * R);
+    }
+    return g;
+  }
+  const headFacets = facet(sculptHead());
   {
-    // cubist split face: front-facing facets pale, back facets dark
+    // cubist split face, painted rather than grained so the face plane can be the lightest tone:
+    // facets facing forward pale, sides mid wood, back of the skull dark
     const n = headFacets.attributes.normal, cols = [];
-    const pale = new THREE.Color('#f0d8b0'), mid = new THREE.Color('#ffffff'), dark = new THREE.Color('#9a7656');
+    const pale = new THREE.Color('#ecd2a8'), mid = new THREE.Color('#c49a6c'), dark = new THREE.Color('#8f6a4a');
     for (let i = 0; i < n.count; i++) {
-      const z = n.getZ(i), c = z > 0.45 ? pale : z < -0.35 ? dark : mid;
+      const z = n.getZ(i), c = z > 0.55 ? pale : z < -0.3 ? dark : mid;
       cols.push(c.r, c.g, c.b);
     }
     headFacets.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
   }
-  const headMat = toon('#ffffff', { map: wood, vertexColors: true });
-  const noseGeo = facet(new THREE.ConeGeometry(0.14, 0.56, 3)), noseMat = toon('#f0d8b0', { map: wood });
-  const hairGeo = new THREE.IcosahedronGeometry(0.58, 0); hairGeo.scale(1.02, 0.72, 1.2);
+  const headMat = toon('#ffffff', { vertexColors: true });
+  const hairGeo = new THREE.IcosahedronGeometry(0.58, 0); hairGeo.scale(1.0, 0.68, 1.02);
   const hairFacets = facet(hairGeo), hairMat = toon('#6e4f36', { map: wood });
-  const jawGeo = facet(new THREE.ConeGeometry(0.32, 0.34, 4));
   function makePiece(headRot) {
     const head = new THREE.Mesh(headFacets, headMat);
     head.position.y = NECK_TOP + 0.5;
     head.rotation.copy(headRot);
-    const nose = new THREE.Mesh(noseGeo, noseMat);
-    nose.rotation.x = Math.PI / 2 + 0.5; nose.position.set(0, -0.05, 0.56);
     const hair = new THREE.Mesh(hairFacets, hairMat);
-    hair.position.set(0, 0.2, -0.14); hair.rotation.set(0.35, 0.3, -0.2);
-    const jaw = new THREE.Mesh(jawGeo, woodMat);
-    jaw.rotation.x = Math.PI - 0.35; jaw.position.set(0, -0.38, 0.16);
-    head.add(nose, hair, jaw);
+    hair.position.set(0, 0.36, -0.22); hair.rotation.set(0.5, 0.3, -0.15);   // swept back, clear of the brow
+    head.add(hair);
     const g = new THREE.Group();
     g.add(new THREE.Mesh(bodyGeo, woodMat), head);
     g.scale.setScalar(PIECE_S);
@@ -357,7 +422,7 @@ export function createScene({ canvas, floors, mobile = false, onProgress = () =>
   }
 
   // easter egg: the piece that fell stands again at the top, by the contact floor
-  const topPiece = makePiece(new THREE.Euler(-0.12, 0.25, 0.04));
+  const topPiece = makePiece(new THREE.Euler(0.32, 0.22, 0.03));   // chin down, looking at the visitor below
   scene.add(topPiece);
   const topHalo = new THREE.Group();
   topHalo.add(new THREE.Mesh(new THREE.CircleGeometry(1.0, 22), new THREE.MeshBasicMaterial({ color: P.cream, fog: false })),
@@ -376,7 +441,21 @@ export function createScene({ canvas, floors, mobile = false, onProgress = () =>
 
   // ── Floating paper sheets in the stairwell (the CV pages) ──
   const papers = [];
-  const paperMat = toon(P.cream, { side: THREE.DoubleSide });
+  // typewritten sheet: header bar, a few lines of "text", a red stamp
+  const paperTex = (() => {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 176;
+    const x = c.getContext('2d');
+    seed = 314;
+    x.fillStyle = P.cream; x.fillRect(0, 0, 128, 176);
+    x.fillStyle = P.ink; x.fillRect(12, 14, 70, 10);
+    x.fillStyle = P.red; x.fillRect(96, 12, 20, 20);
+    x.fillStyle = P.grey;
+    for (let i = 0; i < 9; i++) x.fillRect(12, 42 + i * 13, 50 + rand() * 54, 4);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const paperMat = toon('#ffffff', { side: THREE.DoubleSide, map: paperTex });
   const paperGeo = new THREE.PlaneGeometry(0.26, 0.36);
   seed = 99;
   for (let i = 0; i < (mobile ? 40 : 70); i++) {
@@ -436,16 +515,77 @@ export function createScene({ canvas, floors, mobile = false, onProgress = () =>
   addEventListener('resize', resize);
   resize();
 
+  // ── Picking: posters are clickable once the climb has started ──
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2(), pointerPx = new THREE.Vector2();
+  let hovered = null, mouseSeen = false, climbing = false, pickTick = 0;
+  function pickAt(clientX, clientY) {
+    if (!climbing) return null;
+    ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hit = raycaster.intersectObjects(pickables, false)[0];
+    return hit && hit.distance < 16 ? hit.object : null;
+  }
+  const onCanvasMove = e => { if (e.pointerType === 'mouse') { pointerPx.set(e.clientX, e.clientY); mouseSeen = true; } };
+  const onCanvasLeave = () => { mouseSeen = false; };
+  const onCanvasClick = e => {
+    const hit = pickAt(e.clientX, e.clientY);
+    if (hit) onPick({ ...hit.userData });
+  };
+  canvas.addEventListener('pointermove', onCanvasMove);
+  canvas.addEventListener('pointerleave', onCanvasLeave);
+  canvas.addEventListener('click', onCanvasClick);
+  function updateHover() {
+    // the camera keeps moving under a still mouse, so re-pick every few frames
+    let next = null;
+    if (climbing && mouseSeen && (pickTick++ % 3 === 0)) next = pickAt(pointerPx.x, pointerPx.y);
+    else if (climbing && mouseSeen) next = hovered;
+    if (next !== hovered) { hovered = next; canvas.style.cursor = next ? 'pointer' : ''; }
+    for (const m of pickables) {
+      const g = m.parent, s = m === hovered ? 1.04 : 1;
+      if (Math.abs(g.scale.x - s) > 0.001) g.scale.setScalar(g.scale.x + (s - g.scale.x) * 0.2);
+    }
+  }
+
+  // ── Context loss: hand over to the plain page ──
+  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); running = false; cancelAnimationFrame(raf); onLost(); });
+
+  // ── Adaptive quality: drop resolution, then MSAA, before giving up ──
+  const QUALITY = [dpr, Math.min(dpr, 1), 0.75];
+  let level = 0, samples = [], slowReported = false;
+  function measure(dtMs) {
+    if (dtMs > 250) return;   // tab switch or a hitch, not a real frame
+    samples.push(dtMs);
+    if (samples.length < 90) return;
+    const sorted = samples.slice(20).sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    samples = [];
+    const budget = [24, 30, 34][level];
+    if (median <= budget) return;
+    if (level < QUALITY.length - 1) {
+      level++;
+      renderer.setPixelRatio(QUALITY[level]);
+      if (target.samples) { target.samples = 0; target.dispose(); }
+      resize();
+    } else if (!slowReported) {
+      slowReported = true;
+      onSlow();
+    }
+  }
+
   // ── Frame loop ──
   const hp = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const cp = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const tmpP = new THREE.Vector3(), tmpT = new THREE.Vector3(), tmpU = new THREE.Vector3();
-  const clock = new THREE.Clock();
-  let goal = 0, prog = 0, running = false, raf = 0, first = true;
+  let goal = 0, prog = 0, running = false, raf = 0, first = true, time = 0, last = 0;
 
-  function frame() {
+  function frame(now) {
     raf = requestAnimationFrame(frame);
-    const t = clock.getElapsedTime();
+    const dtMs = now - last;
+    last = now;
+    time += Math.min(dtMs / 1000, 0.1);
+    const t = time;
+    if (!first) measure(dtMs);
     prog = first ? goal : prog + (goal - prog) * 0.08;
     first = false;
 
@@ -461,6 +601,8 @@ export function createScene({ canvas, floors, mobile = false, onProgress = () =>
     camera.position.copy(tmpP);
     camera.up.copy(tmpU);
     camera.lookAt(tmpT);
+    climbing = blend > 0.95;
+    updateHover();
 
     for (const p of papers) {
       p.position.y += p.userData.sp * 0.006;
@@ -490,12 +632,22 @@ export function createScene({ canvas, floors, mobile = false, onProgress = () =>
     setGoal(p) { goal = Math.max(0, Math.min(1, p)); },
     snap(p) { goal = prog = Math.max(0, Math.min(1, p)); },
     get progress() { return prog; },
-    start() { if (!running) { running = true; clock.start(); frame(); } },
+    start() {
+      if (running) return;
+      running = true;
+      last = performance.now();
+      samples = [];
+      raf = requestAnimationFrame(frame);
+    },
     stop() { running = false; cancelAnimationFrame(raf); },
+    get quality() { return level; },
     dispose() {
       this.stop();
       removeEventListener('resize', resize);
       removeEventListener('pointermove', onPointer);
+      canvas.removeEventListener('pointermove', onCanvasMove);
+      canvas.removeEventListener('pointerleave', onCanvasLeave);
+      canvas.removeEventListener('click', onCanvasClick);
       renderer.dispose();
     },
   };
