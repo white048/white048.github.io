@@ -35,6 +35,8 @@
       clip-path: polygon(0 0, 100% 0, 93% 100%, 0 100%);
     }
     a:hover, a:focus-visible { background: var(--ink); outline: none; }
+    a.alt { margin-top: 0; background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+    a.alt:hover, a.alt:focus-visible { background: var(--ink); color: var(--paper); }
   </style>
 </head>
 <body>
@@ -43,6 +45,7 @@
     <div class="banner">NO SUCH FLOOR</div>
     <p>这一层在档案馆里不存在。<br />This floor isn't in the archive.</p>
     <a href="/">回到塔底 · Back to the tower</a>
+    <a class="alt" href="/games/token-forge/">或者去印刷厂玩一局 · Or play Token Forge</a>
   </main>
 </body>
 </html>

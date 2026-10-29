@@ -93,6 +93,7 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
   content: ""; position: absolute; z-index: -1; right: calc(-12% + min(600px, 86vw) * .38); top: calc(-70px + min(600px, 86vw) * .38);
   width: calc(min(600px, 86vw) * .24); aspect-ratio: 1; border-radius: 50%; background: var(--red);
 }
+.title .lede { max-width: min(60ch, 56%); }   /* keeps clear of the sun */
 .stations { list-style: none; padding: 0; margin: 34px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .st-card { display: flex; flex-direction: column; gap: 6px; background: var(--paper-hi); border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); padding: 16px 16px 18px; }
 .st-card .no { font: 46px/1 var(--display); color: var(--red); }
@@ -198,6 +199,8 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
 .finale .controls { margin-top: 0; }
 
 @media (max-width: 720px) {
+  .title .lede { max-width: none; }
+  .title::after { display: none; }   /* the sun would merge into the red banner */
   .stations { grid-template-columns: minmax(0, 1fr); }
   .press-grid, .finale { grid-template-columns: minmax(0, 1fr); }
   .sheet { aspect-ratio: auto; min-height: 230px; }

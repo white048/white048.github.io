@@ -143,7 +143,12 @@ async function startScene() {
         floors: FLOORS,
         mobile: isMobile,
         onProgress,
-        onPick: ({ floor, index }) => openPosterLightbox(floor, index),
+        onPick: ({ floor, index }) => {
+          const p = FLOORS.find(f => f.id === floor).posters[index];
+          const href = p.asset && ASSETS[p.asset].href;   // a poster that is a door, not a picture
+          if (href) location.href = href;
+          else openPosterLightbox(floor, index);
+        },
         onSlow: () => toast(
           L('这台设备跑 3D 有点吃力，要换成简洁模式吗？', 'This device is struggling with the 3D tower. Switch to the plain page?'),
           [{ label: L('切换', 'Switch'), primary: true, run: () => setMode('simple') }, { label: L('继续 3D', 'Keep 3D') }],
