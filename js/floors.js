@@ -13,6 +13,8 @@ export const ASSETS = {
   A05: { src: null, layout: 'blocks', accent: 'red',  seed: 47, title: 'BUILT TOGETHER',      sub: 'CSC8507/08 · TEAM OF FOUR' },
   A06: { src: null, layout: 'split',  accent: 'red',  seed: 53, title: 'COOPERATE OR DEFECT', sub: "CSC8501 · PRISONER'S DILEMMA" },
   A08: { src: null, layout: 'chess',  accent: 'teal', seed: 67, title: 'YOUR MOVE',           sub: 'DONG YIJUN · GET IN TOUCH' },
+  // not commissioned art: the door to the Token Forge game (clicking it on the wall opens the game)
+  A09: { src: null, layout: 'forge',  accent: 'red',  seed: 73, title: 'TOKEN FORGE',         sub: 'A GAME · CLICK TO PLAY', href: 'games/token-forge/' },
 };
 
 /* Scroll progress p ∈ [0,1]:
@@ -58,7 +60,8 @@ export const FLOORS = [
   ] },
 
   { id: 'about', range: [0.92, 1.01], stop: 0.985, plate: { no: '05', label: 'CONTACT', off: -0.5, dy: 1.6 }, posters: [
-    { asset: 'A08', w: 3.4, h: 1.91, off: 0.6, dy: 1.0 },
+    { asset: 'A08', w: 3.4, h: 1.91, off: 0.12, dy: 2.4 },
+    { asset: 'A09', w: 2.8, h: 1.57, off: 1.45, dy: 0.5 },
   ] },
 ];
 

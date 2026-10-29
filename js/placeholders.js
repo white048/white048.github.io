@@ -47,6 +47,7 @@ const LABEL_AT = {
   blocks: { x: 36,  y: 40,  w: 396 },
   waves:  { x: 36,  y: 40,  w: 470 },
   chess:  { x: 572, y: 52,  w: 420 },
+  forge:  { x: 36,  y: 40,  w: 440 },
 };
 
 // ink banner with the title, red strip with the subtitle under it
@@ -185,6 +186,26 @@ LAYOUTS.chess = function (x, r, accent) {
   x.fillStyle = accent; x.fillRect(0, -16, 200, 32);
   poly(x, accent, [[196, -44], [262, 0], [196, 44]]);
   x.restore();
+};
+
+// a strip of type slugs with a knife between TOKEN and S (the Token Forge game)
+LAYOUTS.forge = function (x, r, accent) {
+  const P = PALETTE, sw = 92, step = 102, x0 = 330, y0 = 300;
+  rays(x, 680, 640, 14, Math.PI, Math.PI, P.sand, P.cream);
+  x.fillStyle = accent; x.beginPath(); x.arc(860, 140, 90, 0, Math.PI * 2); x.fill();
+  x.font = '96px "Bebas Neue", "Arial Narrow", sans-serif';
+  x.textAlign = 'center';
+  x.textBaseline = 'alphabetic';
+  [...'TOKENS'].forEach((ch, i) => {
+    const px = x0 + i * step + (i === 5 ? 34 : 0);
+    x.fillStyle = P.ink; x.fillRect(px, y0, sw, 124);
+    x.fillStyle = P.cream; x.fillText(ch, px + sw / 2, y0 + 104);
+  });
+  x.textAlign = 'left';
+  poly(x, accent, [[840, y0 - 70], [854, y0 - 70], [866, y0 + 190], [852, y0 + 190]]);
+  x.fillStyle = P.ink; x.fillRect(0, 470, W, H - 470);
+  figure(x, 170, 470, 1.0, P.dark);
+  poly(x, P.grey, [[205, 300], [300, 250], [310, 266], [215, 318]]);   // the foreman points at the cut
 };
 
 /** Draws the poster for asset `id` and returns the canvas. */
