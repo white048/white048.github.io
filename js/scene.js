@@ -178,19 +178,20 @@ export function createScene({
   // From a Blob both steps run on a worker (from an <img> Chrome resizes on the main thread),
   // and an unpremultiplied bitmap uploads without a conversion pass: ~4x less main-thread time.
   const TEX_MAX = mobile ? 768 : 1280;
-  async function loadPicture(src) {
-    if (!window.createImageBitmap) {
-      const img = new Image();
-      img.src = src;
-      await img.decode();
-      return img;
-    }
+  async function loadBitmap(src) {
     const blob = await fetch(src).then(r => r.blob());
     const full = await createImageBitmap(blob, { premultiplyAlpha: 'none' });
     if (full.width <= TEX_MAX) return full;
     full.close();
-    try { return await createImageBitmap(blob, { resizeWidth: TEX_MAX, resizeQuality: 'high', premultiplyAlpha: 'none' }); }
-    catch (e) { return createImageBitmap(blob, { premultiplyAlpha: 'none' }); }
+    return createImageBitmap(blob, { resizeWidth: TEX_MAX, resizeQuality: 'high', premultiplyAlpha: 'none' });
+  }
+  async function loadPicture(src) {
+    try { return await loadBitmap(src); }
+    catch (e) {   // no createImageBitmap, or a browser that rejects its options: a plain <img>
+      const img = new Image();
+      await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; img.src = src; });
+      return img;   // (not img.decode(): it waits for rendering, so it stalls in a background tab)
+    }
   }
   const frameMat = toon(P.ink);
   const blankMat = new THREE.MeshBasicMaterial({ color: P.sand });
@@ -526,7 +527,10 @@ export function createScene({
   }
 
   // ── Post: linear → sRGB, gouache mottling, paper fibre, cut-paper edges, grain ──
-  const target = new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: THREE.HalfFloatType });
+  // half float keeps the darks of the linear scene from banding, but not every GPU can render
+  // into it, and an unrenderable target is a black screen rather than an error
+  const floatTarget = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+  const target = new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: floatTarget ? THREE.HalfFloatType : THREE.UnsignedByteType });
   const quadVert = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
   const HASH = 'float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }';
   // the paper itself never moves, so its noise is baked once per resize, not per frame:
@@ -581,10 +585,16 @@ export function createScene({
   postScene.add(postQuad);
   const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+  // Sized from the canvas box (100vw × 100vh), not the window: a phone's address bar showing
+  // or hiding changes innerHeight mid-scroll, and reallocating every target then stutters
+  // (and stretched the picture, since the canvas itself stays 100vh tall).
+  let sized = '';
   function resize() {
-    const w = innerWidth, h = innerHeight;
-    if (!w || !h) return;   // hidden or collapsed: a zero-size target is an incomplete framebuffer
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;   // hidden (plain page) or collapsed: a zero-size target is an incomplete framebuffer
     const pr = renderer.getPixelRatio();   // follows the adaptive quality level
+    if (`${w}x${h}@${pr}` === sized) return;
+    sized = `${w}x${h}@${pr}`;
     renderer.setSize(w, h, false);
     const pw = Math.max(1, Math.floor(w * pr)), ph = Math.max(1, Math.floor(h * pr));
     target.setSize(pw, ph);
@@ -627,7 +637,7 @@ export function createScene({
   let hovered = null, mouseSeen = false, climbing = false, pickTick = 0;
   function pickAt(clientX, clientY) {
     if (!climbing) return null;
-    ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+    ndc.set(clientX / canvas.clientWidth * 2 - 1, -(clientY / canvas.clientHeight) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     const hit = raycaster.intersectObjects(prog > 0.9 ? [...pickables, topPiece] : pickables, true)[0];
     return hit && hit.distance < 16 ? hit.object : null;
@@ -761,6 +771,7 @@ export function createScene({
     start() {
       if (running) return;
       running = true;
+      resize();   // the window may have changed while the plain page hid the canvas
       last = drawn = performance.now();
       samples = [];
       raf = requestAnimationFrame(frame);
