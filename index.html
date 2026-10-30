@@ -94,8 +94,8 @@
       var q = new URLSearchParams(location.search);
       if (q.get('mode')) mode = q.get('mode');
       if (q.get('lang')) lang = q.get('lang');
-      var gl = false;
-      try { var c = document.createElement('canvas'); gl = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}
+      var gl = false;   // three.js r169 needs WebGL 2; a WebGL 1 device would download it only to fall back
+      try { gl = !!document.createElement('canvas').getContext('webgl2'); } catch (e) {}
       var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
       var conn = navigator.connection, mem = navigator.deviceMemory;
       var lite = !!(conn && conn.saveData) || (mem && mem <= 2);   // data saver or a low-memory device

@@ -37,6 +37,8 @@ export function createScene({
 
   // ── Renderer ──
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  // reading back each shader's log makes its first use wait for the GPU to finish linking it
+  renderer.debug.checkShaderErrors = location.search.includes('debug');
   const dpr = Math.min(devicePixelRatio, mobile ? 1.5 : 1.75);
   renderer.setPixelRatio(dpr);
   const scene = new THREE.Scene();
@@ -49,7 +51,7 @@ export function createScene({
   ramp.minFilter = ramp.magFilter = THREE.NearestFilter;
   ramp.needsUpdate = true;
   const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra });
-  const facet = g => { const n = g.toNonIndexed(); n.computeVertexNormals(); return n; };
+  const facet = g => { const n = g.index ? g.toNonIndexed() : g; n.computeVertexNormals(); return n; };
 
   scene.add(new THREE.HemisphereLight(P.cream, P.dark, 1.35));
   const sun = new THREE.DirectionalLight(P.cream, 2.4);   // light falling from the oculus
@@ -169,7 +171,28 @@ export function createScene({
 
   // ── Posters / frames on the wall ──
   const posterRects = [];   // keeps books out of the way
-  const texLoader = new THREE.TextureLoader();
+  // Pictures are decoded off the main thread and shrunk to what the wall can show: a poster
+  // is a few hundred pixels wide on screen, and full-size textures cost a phone a lot of GPU
+  // memory. They are uploaded unflipped (ImageBitmaps ignore flipY); the poster planes flip
+  // their UVs instead.
+  // From a Blob both steps run on a worker (from an <img> Chrome resizes on the main thread),
+  // and an unpremultiplied bitmap uploads without a conversion pass: ~4x less main-thread time.
+  const TEX_MAX = mobile ? 768 : 1280;
+  async function loadBitmap(src) {
+    const blob = await fetch(src).then(r => r.blob());
+    const full = await createImageBitmap(blob, { premultiplyAlpha: 'none' });
+    if (full.width <= TEX_MAX) return full;
+    full.close();
+    return createImageBitmap(blob, { resizeWidth: TEX_MAX, resizeQuality: 'high', premultiplyAlpha: 'none' });
+  }
+  async function loadPicture(src) {
+    try { return await loadBitmap(src); }
+    catch (e) {   // no createImageBitmap, or a browser that rejects its options: a plain <img>
+      const img = new Image();
+      await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; img.src = src; });
+      return img;   // (not img.decode(): it waits for rendering, so it stalls in a background tab)
+    }
+  }
   const frameMat = toon(P.ink);
   const blankMat = new THREE.MeshBasicMaterial({ color: P.sand });
   const loaders = {};       // floor id → () => void, loads that floor's textures once
@@ -183,7 +206,9 @@ export function createScene({
   function addPoster(a, y, w, h) {
     const g = new THREE.Group();
     const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.08), frameMat);
-    const pic = new THREE.Mesh(new THREE.PlaneGeometry(w, h), blankMat);
+    const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));   // textures arrive unflipped
+    const pic = new THREE.Mesh(geo, blankMat);
     pic.position.z = 0.05;
     g.add(frame, pic);
     const r = R_BOOK - 0.15;
@@ -209,24 +234,35 @@ export function createScene({
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   }
+  // A portrait screen sees a far narrower slice of the wall, so there each floor's pictures
+  // gather towards the view line (closer together and smaller), unless one names its own
+  // `portrait` spot in floors.js. Decided once, when the tower is built.
+  const portrait = innerWidth < innerHeight;
+  const SQUEEZE = portrait ? 0.65 : 1;
+  const spot = (p, w, h) => {
+    const o = (portrait && p.portrait) || {};
+    return { off: o.off ?? (p.off || 0) * SQUEEZE, dy: o.dy ?? (p.dy || 0) * SQUEEZE, w: o.w ?? w * SQUEEZE, h: o.h ?? h * SQUEEZE };
+  };
   const pickables = [];
   for (const f of floors) {
     if (!f.posters) continue;
     const base = wallHit(f.stop);
     const pics = f.posters.map((p, index) => {
-      const mesh = addPoster(base.a + (p.off || 0), base.y + (p.dy || 0), p.w, p.h);
+      const s = spot(p, p.w, p.h);
+      const mesh = addPoster(base.a + s.off, base.y + s.dy, s.w, s.h);
       mesh.userData = { floor: f.id, index };
       pickables.push(mesh);
       return { p, mesh };
     });
     let plate = null;
     if (f.plate) {
-      const a = base.a + f.plate.off, y = base.y + f.plate.dy, r = R_BOOK - 0.12;
-      plate = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.15), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }));
+      const s = spot(f.plate, 1.15, 1.15);
+      const a = base.a + s.off, y = base.y + s.dy, r = R_BOOK - 0.12;
+      plate = new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.h), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }));
       plate.position.set(Math.cos(a) * r, y, Math.sin(a) * r);
       plate.lookAt(0, y, 0);
       scene.add(plate);
-      posterRects.push({ a, y, half: Math.asin(0.85 / r), hh: 0.85 });
+      posterRects.push({ a, y, half: Math.asin((s.w / 2 + 0.28) / r), hh: s.h / 2 + 0.28 });
     }
     let loaded = false;
     loaders[f.id] = () => {
@@ -234,7 +270,9 @@ export function createScene({
       loaded = true;
       if (plate) {
         document.fonts.load('250px "Bebas Neue"').catch(() => {}).finally(() => {
-          plate.material = new THREE.MeshBasicMaterial({ map: plateTexture(f.plate.no, f.plate.label), transparent: true, alphaTest: 0.5 });
+          const map = plateTexture(f.plate.no, f.plate.label);
+          renderer.initTexture(map);
+          plate.material = new THREE.MeshBasicMaterial({ map, transparent: true, alphaTest: 0.5 });
         });
       }
       for (const { p, mesh } of pics) {
@@ -243,9 +281,12 @@ export function createScene({
         const apply = tex => {
           tex.colorSpace = THREE.SRGBColorSpace;
           tex.anisotropy = 4;
+          tex.flipY = false;
+          tex.needsUpdate = true;
+          renderer.initTexture(tex);   // upload now, not on the frame it first comes into view
           mesh.material = p.duotone ? duotoneMat(tex) : new THREE.MeshBasicMaterial({ map: tex });
         };
-        if (src) texLoader.load(src, apply);
+        if (src) loadPicture(src).then(img => apply(new THREE.Texture(img)), () => {});
         else postersReady().then(() => apply(new THREE.CanvasTexture(placeholderCanvas(p.asset, asset))));
       }
     };
@@ -486,29 +527,51 @@ export function createScene({
   }
 
   // ── Post: linear → sRGB, gouache mottling, paper fibre, cut-paper edges, grain ──
-  const target = new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: THREE.HalfFloatType });
-  const post = new THREE.ShaderMaterial({
-    uniforms: { tDiffuse: { value: target.texture }, uTime: { value: 0 }, uRes: { value: new THREE.Vector2() } },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }',
+  // half float keeps the darks of the linear scene from banding, but not every GPU can render
+  // into it, and an unrenderable target is a black screen rather than an error
+  const floatTarget = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+  const target = new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: floatTarget ? THREE.HalfFloatType : THREE.UnsignedByteType });
+  const quadVert = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
+  const HASH = 'float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }';
+  // the paper itself never moves, so its noise is baked once per resize, not per frame:
+  // rg = hand-cut wobble, b = gouache mottling, a = paper fibres
+  const paperTarget = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
+  const paperBake = new THREE.ShaderMaterial({
+    uniforms: { uRes: { value: new THREE.Vector2() } },
+    vertexShader: quadVert,
     fragmentShader: `
-      uniform sampler2D tDiffuse; uniform float uTime; uniform vec2 uRes; varying vec2 vUv;
-      vec3 toSRGB(vec3 c){ c = clamp(c, 0., 1.); return mix(c * 12.92, 1.055 * pow(c, vec3(1. / 2.4)) - .055, step(.0031308, c)); }
-      vec3 tex(vec2 uv){ return toSRGB(texture2D(tDiffuse, uv).rgb); }
-      float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+      uniform vec2 uRes; varying vec2 vUv;
+      ${HASH}
       float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3. - 2. * f);
         return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y); }
       float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.03; a *= .5; } return v; }
+      void main(){
+        vec2 px = vUv * uRes;
+        gl_FragColor = vec4(fbm(px / 38.), fbm(px / 38. + 7.3), fbm(px / 210.), fbm(px * vec2(.9, .14) / 5.));
+      }`,
+    depthTest: false, depthWrite: false,
+  });
+  let paperDirty = true;
+  const post = new THREE.ShaderMaterial({
+    uniforms: { tDiffuse: { value: target.texture }, tPaper: { value: paperTarget.texture }, uTime: { value: 0 }, uRes: { value: new THREE.Vector2() } },
+    vertexShader: quadVert,
+    fragmentShader: `
+      uniform sampler2D tDiffuse, tPaper; uniform float uTime; uniform vec2 uRes; varying vec2 vUv;
+      vec3 toSRGB(vec3 c){ c = clamp(c, 0., 1.); return mix(c * 12.92, 1.055 * pow(c, vec3(1. / 2.4)) - .055, step(.0031308, c)); }
+      vec3 tex(vec2 uv){ return toSRGB(texture2D(tDiffuse, uv).rgb); }
+      ${HASH}
       float lum(vec3 c){ return dot(c, vec3(.299, .587, .114)); }
       void main(){
         vec2 px = vUv * uRes;
-        vec2 wob = (vec2(fbm(px / 38.), fbm(px / 38. + 7.3)) - .5) * 2.4 / uRes;   // hand-cut wobble
+        vec4 n = texture2D(tPaper, vUv);
+        vec2 wob = (n.rg - .5) * 2.4 / uRes;                                        // hand-cut wobble
         vec3 c = tex(vUv + wob);
         vec2 o = 1.2 / uRes;
         float gx = lum(tex(vUv + vec2(o.x, 0.))) - lum(tex(vUv - vec2(o.x, 0.)));
         float gy = lum(tex(vUv + vec2(0., o.y))) - lum(tex(vUv - vec2(0., o.y)));
         c *= 1. - smoothstep(.06, .35, length(vec2(gx, gy))) * .32;               // cut-paper edges
-        c *= .86 + .24 * fbm(px / 210.);                                            // gouache mottling
-        c *= .95 + .07 * fbm(px * vec2(.9, .14) / 5.);                              // paper fibres
+        c *= .86 + .24 * n.b;                                                       // gouache mottling
+        c *= .95 + .07 * n.a;                                                       // paper fibres
         vec3 ink = vec3(.114, .098, .086), paper = vec3(.93, .87, .77);
         c = ink + clamp(c, 0., 1.) * (paper - ink) * 1.06;                          // print tone
         c += (hash(px + fract(uTime) * 91.) - .5) * .035;                           // grain
@@ -517,21 +580,56 @@ export function createScene({
       }`,
     depthTest: false, depthWrite: false,
   });
+  const postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), post);
   const postScene = new THREE.Scene();
-  postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), post));
+  postScene.add(postQuad);
   const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+  // Sized from the canvas box (100vw × 100vh), not the window: a phone's address bar showing
+  // or hiding changes innerHeight mid-scroll, and reallocating every target then stutters
+  // (and stretched the picture, since the canvas itself stays 100vh tall).
+  let sized = '';
   function resize() {
-    const w = innerWidth, h = innerHeight;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;   // hidden (plain page) or collapsed: a zero-size target is an incomplete framebuffer
+    const pr = renderer.getPixelRatio();   // follows the adaptive quality level
+    if (`${w}x${h}@${pr}` === sized) return;
+    sized = `${w}x${h}@${pr}`;
     renderer.setSize(w, h, false);
-    target.setSize(Math.floor(w * dpr), Math.floor(h * dpr));
+    const pw = Math.max(1, Math.floor(w * pr)), ph = Math.max(1, Math.floor(h * pr));
+    target.setSize(pw, ph);
+    paperTarget.setSize(pw, ph);
     camera.aspect = w / h;
     camera.fov = w < h ? 95 : 82;
     camera.updateProjectionMatrix();
-    post.uniforms.uRes.value.set(w * dpr, h * dpr);
+    post.uniforms.uRes.value.set(w * pr, h * pr);
+    paperBake.uniforms.uRes.value.set(w * pr, h * pr);
+    paperDirty = true;
   }
   addEventListener('resize', resize);
   resize();
+
+  // ── Warm-up: compile every shader before the first frame, including the variants for the
+  //    pictures that arrive later, so the climb never stalls on a poster coming into view.
+  //    Where the browser compiles in parallel this stays off the main thread. ──
+  const ready = (() => {
+    const dummy = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+    dummy.colorSpace = THREE.SRGBColorSpace;
+    const later = new THREE.Group();   // never added to the scene
+    const quad = new THREE.PlaneGeometry(1, 1);
+    for (const m of [new THREE.MeshBasicMaterial({ map: dummy }), duotoneMat(dummy),
+      new THREE.MeshBasicMaterial({ map: dummy, transparent: true, alphaTest: 0.5 })]) later.add(new THREE.Mesh(quad, m));
+    // programs depend on the target they draw into, so compile each pass against its own
+    renderer.setRenderTarget(target);
+    const jobs = [renderer.compileAsync(scene, camera), renderer.compileAsync(later, camera, scene)];
+    renderer.setRenderTarget(paperTarget);
+    postQuad.material = paperBake;
+    jobs.push(renderer.compileAsync(postScene, postCam));
+    renderer.setRenderTarget(null);
+    postQuad.material = post;
+    jobs.push(renderer.compileAsync(postScene, postCam));
+    return Promise.race([Promise.all(jobs), new Promise(r => setTimeout(r, 4000))]);
+  })();
 
   // ── Picking: posters (and the piece at the top) are clickable once the climb has started ──
   const raycaster = new THREE.Raycaster();
@@ -539,7 +637,7 @@ export function createScene({
   let hovered = null, mouseSeen = false, climbing = false, pickTick = 0;
   function pickAt(clientX, clientY) {
     if (!climbing) return null;
-    ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+    ndc.set(clientX / canvas.clientWidth * 2 - 1, -(clientY / canvas.clientHeight) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     const hit = raycaster.intersectObjects(prog > 0.9 ? [...pickables, topPiece] : pickables, true)[0];
     return hit && hit.distance < 16 ? hit.object : null;
@@ -555,7 +653,7 @@ export function createScene({
   canvas.addEventListener('pointermove', onCanvasMove);
   canvas.addEventListener('pointerleave', onCanvasLeave);
   canvas.addEventListener('click', onCanvasClick);
-  function updateHover() {
+  function updateHover(ease) {
     // the camera keeps moving under a still mouse, so re-pick every few frames
     let next = null;
     if (climbing && mouseSeen && (pickTick++ % 3 === 0)) next = pickAt(pointerPx.x, pointerPx.y);
@@ -563,7 +661,7 @@ export function createScene({
     if (next !== hovered) { hovered = next; canvas.style.cursor = next ? 'pointer' : ''; }
     for (const m of pickables) {
       const g = m.parent, s = m === hovered ? 1.04 : 1;
-      if (Math.abs(g.scale.x - s) > 0.001) g.scale.setScalar(g.scale.x + (s - g.scale.x) * 0.2);
+      if (Math.abs(g.scale.x - s) > 0.001) g.scale.setScalar(g.scale.x + (s - g.scale.x) * ease(0.2));
     }
   }
 
@@ -597,21 +695,30 @@ export function createScene({
   const hp = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const cp = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const tmpP = new THREE.Vector3(), tmpT = new THREE.Vector3(), tmpU = new THREE.Vector3();
-  let goal = 0, prog = 0, running = false, raf = 0, first = true, time = 0, last = 0;
+  let goal = 0, prog = 0, running = false, raf = 0, first = true, time = 0, last = 0, drawn = 0, skipped = false;
 
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dtMs = now - last;
     last = now;
     time += Math.min(dtMs / 1000, 0.1);
+    // while only the floating paper and the grain move, every other frame is enough
+    const settled = !first && Math.abs(goal - prog) < 1e-4 && mouseS.distanceToSquared(mouse) < 1e-6 && hopT0 === null;
+    if (settled && !skipped) { skipped = true; return; }
+    skipped = false;
     const t = time;
     if (!first) measure(dtMs);
-    prog = first ? goal : prog + (goal - prog) * 0.08;
+    // the easing rates below are per 60 Hz frame: scale them by the time since the last drawn
+    // frame, so 120 Hz screens and skipped frames move at the same speed
+    const n = first ? 1 : Math.min(now - drawn, 100) / (1000 / 60);
+    drawn = now;
+    const ease = rate => 1 - Math.pow(1 - rate, n);
+    prog = first ? goal : prog + (goal - prog) * ease(0.08);
     first = false;
 
     const fall = THREE.MathUtils.smoothstep(prog, 0, 0.075);
     const blend = THREE.MathUtils.smoothstep(prog, 0.07, 0.15);
-    mouseS.lerp(mouse, 0.05);
+    mouseS.lerp(mouse, ease(0.05));
     animatePiece(fall, t);
     animateHop(t);
     heroPose(fall * 0.5, ...hp);
@@ -623,17 +730,24 @@ export function createScene({
     camera.up.copy(tmpU);
     camera.lookAt(tmpT);
     climbing = blend > 0.95;
-    updateHover();
+    updateHover(ease);
 
     for (const p of papers) {
-      p.position.y += p.userData.sp * 0.006;
+      p.position.y += p.userData.sp * 0.006 * n;
       if (p.position.y > H + 2) p.position.y = 10;
-      p.rotation.y += p.userData.rs * 0.01;
-      p.rotation.x += p.userData.rs * 0.006;
+      p.rotation.y += p.userData.rs * 0.01 * n;
+      p.rotation.x += p.userData.rs * 0.006 * n;
     }
     // load a floor's pictures a little before its caption comes up
     for (const f of floors) if (loaders[f.id] && prog > f.range[0] - 0.14) loaders[f.id]();
 
+    if (paperDirty) {
+      postQuad.material = paperBake;
+      renderer.setRenderTarget(paperTarget);
+      renderer.render(postScene, postCam);
+      postQuad.material = post;
+      paperDirty = false;
+    }
     post.uniforms.uTime.value = t;
     renderer.setRenderTarget(target);
     renderer.render(scene, camera);
@@ -650,13 +764,15 @@ export function createScene({
   }, 1200);
 
   return {
+    ready,   // resolves once the shaders are compiled
     setGoal(p) { goal = Math.max(0, Math.min(1, p)); },
     snap(p) { goal = prog = Math.max(0, Math.min(1, p)); },
     get progress() { return prog; },
     start() {
       if (running) return;
       running = true;
-      last = performance.now();
+      resize();   // the window may have changed while the plain page hid the canvas
+      last = drawn = performance.now();
       samples = [];
       raf = requestAnimationFrame(frame);
     },

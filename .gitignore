@@ -1,0 +1,3 @@
+# this repo is the public site: keep tool state and full-size art originals out of it
+.claude/
+assets-src/

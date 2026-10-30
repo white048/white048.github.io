@@ -61,10 +61,15 @@ function toast(text, actions = []) {
 function hideToast() { toastEl.hidden = true; }
 
 // ── Generated posters for <img data-ph> (until the commissioned art lands) ──
+// each is a canvas drawing plus a JPEG encode, so it is made only when about to be seen
+// (in the tower: when its side panel slides in)
 const assetURL = id => ASSETS[id].src || placeholderURL(id, ASSETS[id]);
-postersReady().then(() => {
-  for (const img of $$('img[data-ph]')) img.src = assetURL(img.dataset.ph);
-});
+const fillPoster = img => { posterWatch.unobserve(img); img.src = assetURL(img.dataset.ph); };
+const fillPosters = imgs => { if (imgs.length) postersReady().then(() => imgs.forEach(fillPoster)); };
+const posterWatch = new IntersectionObserver(entries => {
+  fillPosters(entries.filter(e => e.isIntersecting).map(e => e.target));
+}, { rootMargin: '800px 0px' });
+$$('img[data-ph]').forEach(img => posterWatch.observe(img));
 
 // ── Mobile floor menu ──
 const nav = $('#floorNav'), navToggle = $('#navToggle');
@@ -164,7 +169,7 @@ async function startScene() {
         },
       });
       if (location.search.includes('debug')) window.__archive = { scene, jump: p => { scrollTo(0, p * maxScroll()); scene.snap(p); } };
-      return scene;
+      return scene.ready.then(() => scene);   // the loader stays up while the shaders compile
     });
   }
   try {
@@ -266,6 +271,7 @@ function openPanel(id, trigger) {
   if (!is3D()) return;
   closePanel();
   openId = id; opener = trigger || null;
+  fillPosters($$('img[data-ph]:not([src])', sections[id]));   // before it slides in, not as it scrolls
   sections[id].classList.add('is-open');
   trigger?.setAttribute('aria-expanded', 'true');
   scrim.hidden = false;
@@ -288,6 +294,10 @@ $$('[data-open]').forEach(b => {
   b.setAttribute('aria-expanded', 'false');
   b.setAttribute('aria-controls', b.dataset.open + '-body');
   b.addEventListener('click', () => openPanel(b.dataset.open, b));
+  // a closed panel is display:none, so its lazy pictures wait; start them as the button is approached
+  const warm = () => $$('img[loading="lazy"]', sections[b.dataset.open]).forEach(img => { img.loading = 'eager'; });
+  b.addEventListener('pointerenter', warm, { once: true });
+  b.addEventListener('focus', warm, { once: true });
 });
 $$('[data-close]').forEach(b => b.addEventListener('click', closePanel));
 scrim.addEventListener('click', closePanel);
@@ -371,6 +381,7 @@ lb.addEventListener('touchend', e => {
 // ══ PRINT: the tower can't be printed, so print the plain page ══
 let printFrom3D = false;
 addEventListener('beforeprint', () => {
+  $$('img[data-ph]:not([src])').forEach(fillPoster);   // the whole page is printed, not just what was scrolled past
   if (!is3D()) return;
   printFrom3D = true;
   setMode('simple', { remember: false });
