@@ -20,7 +20,7 @@ const climbAngle = u => START_A + u * (TURNS - 1.2) * Math.PI * 2;
 
 // camera dwells around each floor's stop for this much climb (u) either side
 const DWELL = 0.015;
-const CLIMB_FROM = 0.12;   // progress where the climb starts (after the fall)
+const CLIMB_FROM = 0.12;   // progress where the climb starts (after the opening look up)
 
 export function createScene({
   canvas, floors, mobile = false,
@@ -436,34 +436,7 @@ export function createScene({
     return g;
   }
 
-  // hung upside down from a cord tied to the base; the head is carved tilted back,
-  // so hanging it gazes down the stairwell at the visitor
-  const HANG_ATTACH = 8.2, HANG_S = 1.35, CENTER = 1.2 * PIECE_S * HANG_S;
-  const hanging = makePiece(new THREE.Euler(-1.2, 0.2, 0));
-  hanging.rotation.x = Math.PI;
-  hanging.scale.multiplyScalar(HANG_S);
-  hanging.position.y = CENTER;   // spin around the piece's middle, not its base
-  const spinner = new THREE.Group(); spinner.add(hanging);
-  const hang = new THREE.Group(); hang.add(spinner);
-  scene.add(hang);
-  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1, 5), toon(P.red));
-  scene.add(cord);
-  function setCord(bottom) {
-    const top = H + 6;
-    cord.scale.y = top - bottom;
-    cord.position.y = (top + bottom) / 2;
-  }
-  // scroll-scrubbed (not simulated) so scrolling back hangs the piece up again
-  function animatePiece(k, t) {
-    const g = k * k;   // gravity: slow start, fast finish
-    hang.position.set(-1.9 * g, HANG_ATTACH - CENTER - (HANG_ATTACH - CENTER - 0.7) * g, 1.1 * g);
-    spinner.rotation.set(g * 0.9, t * 0.22 * (1 - k), Math.sin(t * 0.9) * 0.035 * (1 - k) + g * 2.3);
-    const snap = THREE.MathUtils.smoothstep(k, 0, 0.35);   // the cut cord springs back up
-    setCord(HANG_ATTACH + snap * 4.5 + Math.sin(k * 30) * 0.15 * snap * (1 - snap));
-    hang.visible = k < 0.999;
-  }
-
-  // easter egg: the piece that fell stands again at the top, by the contact floor
+  // the one piece in the tower stands at the top, by the contact floor (clicking it is the easter egg)
   const topPiece = makePiece(new THREE.Euler(0.32, 0.22, 0.03));   // chin down, looking at the visitor below
   scene.add(topPiece);
   const topHalo = new THREE.Group();
@@ -716,12 +689,11 @@ export function createScene({
     prog = first ? goal : prog + (goal - prog) * ease(0.08);
     first = false;
 
-    const fall = THREE.MathUtils.smoothstep(prog, 0, 0.075);
+    const turn = THREE.MathUtils.smoothstep(prog, 0, 0.075);   // the view rolls a little before the climb
     const blend = THREE.MathUtils.smoothstep(prog, 0.07, 0.15);
     mouseS.lerp(mouse, ease(0.05));
-    animatePiece(fall, t);
     animateHop(t);
-    heroPose(fall * 0.5, ...hp);
+    heroPose(turn * 0.5, ...hp);
     climbPose(progToClimb(prog), ...cp);
     tmpP.lerpVectors(hp[0], cp[0], blend);
     tmpT.lerpVectors(hp[1], cp[1], blend);

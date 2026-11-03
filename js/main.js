@@ -161,7 +161,7 @@ async function startScene() {
         onEgg: () => {
           if (eggFound) return;
           eggFound = true;
-          toast(L('你找到了那枚掉下去的棋子——它又站起来了。', 'You found the piece that fell. It stands again.'));
+          toast(L('守塔的棋子跟你打了个招呼。', 'The keeper of the tower says hello.'));
         },
         onLost: () => {
           setMode('simple', { remember: false });
