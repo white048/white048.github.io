@@ -161,10 +161,14 @@ html[data-lang="zh"] .tool--lang .l-zh, html[data-lang="en"] .tool--lang .l-en {
   overflow-y: auto; overscroll-behavior: contain;
   padding: max(16px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) 56px 28px;
   box-shadow: -14px 0 0 rgba(0, 0, 0, .28);
-  transform: translateX(110%); visibility: hidden;
-  transition: transform .45s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .45s;
+  /* display:none while closed, or the lazy images of every panel load at once (they sit just
+     off-screen); allow-discrete keeps the slide where supported, older browsers just pop */
+  display: none; transform: translateX(110%);
+  transition: transform .45s cubic-bezier(.2, .8, .2, 1);
+  transition: transform .45s cubic-bezier(.2, .8, .2, 1), display .45s allow-discrete;
 }
-.mode-3d .floor.is-open .floor-body { transform: none; visibility: visible; transition-delay: 0s; }
+.mode-3d .floor.is-open .floor-body { display: block; transform: none; }
+@starting-style { .mode-3d .floor.is-open .floor-body { transform: translateX(110%); } }
 .mode-3d #scrim { position: fixed; inset: 0; z-index: 25; background: rgba(29, 25, 22, .5); }
 .panel-close {
   position: sticky; top: 0; z-index: 2; display: block; margin: 0 0 8px auto;
