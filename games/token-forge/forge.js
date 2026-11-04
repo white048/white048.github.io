@@ -163,7 +163,10 @@ function renderTitle() {
   stage.innerHTML = `
     <section class="title">
       <p class="kicker">${T('A five-minute game · three stations', '五分钟小游戏 · 三个工位')}</p>
-      <h1 class="banner">TOKEN FORGE</h1>
+      <figure class="key-art">
+        <img src="key-art.webp" alt="" width="1536" height="864" fetchpriority="high" />
+        <h1>TOKEN FORGE</h1>
+      </figure>
       <p class="lede">${T('A language model doesn\'t read letters or write sentences. It cuts text into tokens, decides where to look, and rolls weighted dice. This print shop works the same way. Clock in.',
         '语言模型既不认字母，也不写句子：它把文字切成词元，决定该看哪里，再掷一把带权重的骰子。这间印刷厂也是这么干活的。上工吧。')}</p>
       <ol class="stations">
@@ -189,6 +192,16 @@ function renderTitle() {
     </section>`;
 }
 
+// the foreman points while explaining, folds his arms at a mistake or a so-so result,
+// and gives a thumbs-up for a perfect one (the CHAIN station has no wrong answers)
+const FOREMAN = ['point', 'arms', 'thumb'];
+let foremanWarm = false;
+function foremanPose(id) {
+  if (!foremanWarm) { foremanWarm = true; FOREMAN.forEach(p => { new Image().src = `foreman-${p}.webp`; }); }
+  if (state.done) return id === 'chain' || state.stars === 3 ? 'thumb' : 'arms';
+  return state.msg && id !== 'chain' ? 'arms' : 'point';
+}
+
 function shell(id, round, board, controls, say) {
   const m = META[id];
   const pips = round < 0 ? '' : [0, 1, 2].map(i => `<span class="pip ${i < round ? 'done' : i === round ? 'now' : ''}"></span>`).join('');
@@ -203,7 +216,7 @@ function shell(id, round, board, controls, say) {
         ${pips && `<div class="pips" aria-label="Round ${round + 1} / 3">${pips}</div>`}
       </div>
       <div class="foreman">
-        <span class="face" aria-hidden="true"></span>
+        <img class="face" src="foreman-${foremanPose(id)}.webp" alt="" width="320" height="320" />
         <p class="say" aria-live="polite"><span class="who">${T('Foreman', '工头')}</span>${say}</p>
       </div>
       ${board}
