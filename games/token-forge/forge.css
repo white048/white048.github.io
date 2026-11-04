@@ -83,19 +83,15 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
 .stars .off { color: var(--paper-lo); }
 
 /* ── title screen ── */
-.title { position: relative; isolation: isolate; padding: 18px 0 0; }
-.title::before {
-  content: ""; position: absolute; z-index: -1; right: -12%; top: -70px;
-  width: min(600px, 86vw); aspect-ratio: 1; border-radius: 50%;
-  background: repeating-conic-gradient(var(--paper-lo) 0 9deg, transparent 9deg 18deg);
-  -webkit-mask-image: radial-gradient(circle, #000 50%, transparent 71%);
-  mask-image: radial-gradient(circle, #000 50%, transparent 71%);
+.title { padding: 18px 0 0; }
+/* the key art (B01) leaves a blank red band along its bottom: the title is set on it as live text */
+.key-art { position: relative; margin: 0; container-type: inline-size; border: 2px solid var(--ink); box-shadow: 9px 9px 0 var(--ink); background: var(--paper-lo); }
+.key-art img { display: block; width: 100%; height: auto; }
+.key-art h1 {
+  position: absolute; left: 3.6%; top: 80.1%; height: 14.5%; margin: 0;
+  display: flex; align-items: center; padding-top: .07em;
+  font: 400 9cqw/1 var(--display); letter-spacing: .02em; color: var(--paper);
 }
-.title::after {
-  content: ""; position: absolute; z-index: -1; right: calc(-12% + min(600px, 86vw) * .38); top: calc(-70px + min(600px, 86vw) * .38);
-  width: calc(min(600px, 86vw) * .24); aspect-ratio: 1; border-radius: 50%; background: var(--red);
-}
-.title .lede { max-width: min(60ch, 56%); }   /* keeps clear of the sun */
 .stations { list-style: none; padding: 0; margin: 34px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .st-card { display: flex; flex-direction: column; gap: 6px; background: var(--paper-hi); border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); padding: 16px 16px 18px; }
 .st-card .no { font: 46px/1 var(--display); color: var(--red); }
@@ -118,11 +114,9 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
 .pip.now { background: var(--red); border-color: var(--red); }
 
 .foreman { display: flex; gap: 14px; align-items: flex-start; margin: 20px 0 18px; }
-.face { flex: none; position: relative; width: 50px; height: 66px; }
-.face::before { content: ""; position: absolute; left: 13px; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); box-shadow: inset -6px -4px 0 var(--ink-2); }
-.face::after { content: ""; position: absolute; left: 4px; top: 22px; width: 42px; height: 44px; background: var(--ink); clip-path: polygon(30% 0, 70% 0, 78% 70%, 100% 80%, 100% 100%, 0 100%, 0 80%, 22% 70%); }
-.say { position: relative; flex: 1; margin: 0; min-height: 56px; background: var(--ink); color: var(--paper); padding: 12px 16px; font: 15.5px/1.65 var(--type); }
-.say::before { content: ""; position: absolute; left: -10px; top: 18px; border: 6px solid transparent; border-right: 10px solid var(--ink); border-left: 0; }
+.face { flex: none; width: 84px; height: 84px; border: 2px solid var(--ink); background: var(--paper-hi); }
+.say { position: relative; flex: 1; margin: 0; min-height: 84px; background: var(--ink); color: var(--paper); padding: 12px 16px; font: 15.5px/1.65 var(--type); }
+.say::before { content: ""; position: absolute; left: -10px; top: 30px; border: 6px solid transparent; border-right: 10px solid var(--ink); border-left: 0; }
 .say .who { display: block; font: 14px/1 var(--display); letter-spacing: .18em; color: var(--rose); margin-bottom: 4px; }
 .say b { color: var(--rose); font-weight: 400; }
 
@@ -214,8 +208,10 @@ main { max-width: 920px; margin: 0 auto; padding: 28px var(--gutter-r) 72px var(
 .finale .controls { margin-top: 0; }
 
 @media (max-width: 720px) {
-  .title .lede { max-width: none; }
-  .title::after { display: none; }   /* the sun would merge into the red banner */
+  .key-art { box-shadow: 6px 6px 0 var(--ink); }
+  .face { width: 60px; height: 60px; }
+  .say { min-height: 60px; }
+  .say::before { top: 20px; }
   .stations { grid-template-columns: minmax(0, 1fr); }
   .press-grid, .finale, .chain-grid { grid-template-columns: minmax(0, 1fr); }
   .sheet { aspect-ratio: auto; min-height: 230px; }

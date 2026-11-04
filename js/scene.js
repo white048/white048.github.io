@@ -354,7 +354,7 @@ export function createScene({
     scene.add(floor);
   }
 
-  // ── Wooden chess-head piece (placeholder head until the A01 turnaround arrives) ──
+  // ── Wooden chess-head piece, after the A01 turnaround ──
   function woodTexture() {
     const c = document.createElement('canvas'); c.width = 256; c.height = 512;
     const x = c.getContext('2d');
@@ -375,61 +375,106 @@ export function createScene({
   }
   const wood = woodTexture();
   const woodMat = toon('#ffffff', { map: wood });
-  const PIECE_S = 1.25, NECK_TOP = 1.45;
-  const profile = [[0, 0], [0.62, 0], [0.63, 0.07], [0.56, 0.12], [0.6, 0.2], [0.47, 0.28], [0.36, 0.42], [0.29, 0.7], [0.24, 1.05],
-    [0.38, 1.12], [0.42, 1.18], [0.31, 1.24], [0.2, 1.3], [0.17, NECK_TOP], [0, NECK_TOP]].map(([r, y]) => new THREE.Vector2(r, y));
-  const bodyGeo = facet(new THREE.LatheGeometry(profile, 16));
-  // carved head: a sphere pushed into a flat face plane with a nose wedge,
-  // eye sockets, brow, mouth groove, chin and a narrowing jaw (front = +z)
+  // turned like the A01 turnaround: a two-step base, a concave body, a collar and a tall neck
+  const PIECE_S = 1.15, NECK_TOP = 2.1, HEAD_Y = 2.25, HEAD_S = 1.25;
+  const profile = [[0, 0], [0.62, 0], [0.635, 0.03], [0.635, 0.24], [0.6, 0.29], [0.555, 0.3], [0.555, 0.4], [0.535, 0.46], [0.48, 0.5],
+    [0.43, 0.53], [0.37, 0.63], [0.325, 0.77], [0.295, 0.93], [0.275, 1.09], [0.265, 1.2],
+    [0.33, 1.22], [0.365, 1.25], [0.365, 1.32], [0.33, 1.36], [0.235, 1.37], [0.215, 1.42], [0.21, NECK_TOP], [0, NECK_TOP]]
+    .map(([r, y]) => new THREE.Vector2(r, y));
+  const bodyGeo = facet(new THREE.LatheGeometry(profile, 18));
+
+  // carved head (front = +z, about 1 unit chin to crown): a union of ellipsoids cut by flat
+  // planes, then a nose, brow, sockets, lips, chin and ears, and combed-back hair with a crest
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const tri = v => Math.max(0, 1 - Math.abs(v));
+  const VOLUMES = [   // [centre, radii]
+    [[0, 0.1, -0.05], [0.36, 0.4, 0.44]],    // skull
+    [[0, -0.08, 0.07], [0.29, 0.4, 0.33]],   // face
+    [[0, -0.27, 0.06], [0.24, 0.2, 0.28]],   // jaw
+  ];
+  function reach(d, [c, R]) {   // far hit of the ray t·d with an ellipsoid
+    const dx = d.x / R[0], dy = d.y / R[1], dz = d.z / R[2];
+    const ox = -c[0] / R[0], oy = -c[1] / R[1], oz = -c[2] / R[2];
+    const A = dx * dx + dy * dy + dz * dz, B = 2 * (ox * dx + oy * dy + oz * dz), C = ox * ox + oy * oy + oz * oz - 1;
+    const disc = B * B - 4 * A * C;
+    return disc < 0 ? 0 : (-B + Math.sqrt(disc)) / (2 * A);
+  }
+  function hairline(ax, z) {   // the hair starts above this height: receding at the temples, a V at the nape
+    const front = 0.22 + 0.25 * ax * ax;
+    if (z > 0.2) return front;
+    if (z > -0.08) return 0.1 + (front - 0.1) * (z + 0.08) / 0.28;
+    return -0.14 + 0.5 * ax + (0.24 - 0.5 * ax) * smooth(-0.3, -0.08, z);
+  }
   function sculptHead() {
-    const R = 0.55, g = new THREE.IcosahedronGeometry(R, 3);
-    const pos = g.attributes.position, p = new THREE.Vector3();
-    const lerp = THREE.MathUtils.lerp;
+    const g = new THREE.IcosahedronGeometry(1, 11);
+    const pos = g.attributes.position, d = new THREE.Vector3();
+    const hair = new Float32Array(pos.count);
     for (let i = 0; i < pos.count; i++) {
-      p.fromBufferAttribute(pos, i).divideScalar(R);
-      let x = p.x * 0.8, y = p.y * 1.12, z = p.z * 0.95;
-      const nx = Math.abs(x);
-      if (z > 0) {
-        z = Math.min(z, 0.7 + 0.1 * (1 - nx / 0.8));   // flatten into a face plane
-        if (nx < 0.13 && y > -0.3 && y < 0.2) {         // nose: bridge to tip
-          const out = y > -0.2 ? lerp(0.26, 0.05, (y + 0.2) / 0.4) : lerp(0.26, 0, (-0.2 - y) / 0.1);
-          z += out * (1 - nx / 0.13);
-        }
-        const eye = Math.hypot(nx - 0.27, y - 0.1);
-        if (eye < 0.14) z -= 0.07 * (1 - eye / 0.14);     // eye sockets
-        if (y > 0.2 && y < 0.32 && nx < 0.45) z += 0.04;  // brow
-        if (Math.abs(y + 0.4) < 0.035 && nx < 0.2) z -= 0.04;   // mouth
-        if (y < -0.48 && nx < 0.3) z += 0.07 * (1 - nx / 0.3);  // chin
-      } else {
-        z *= 1.08;   // fuller back of the skull
+      d.fromBufferAttribute(pos, i).normalize();
+      const t = Math.max(...VOLUMES.map(vol => reach(d, vol)));
+      let x = d.x * t, y = d.y * t, z = d.z * t;
+      const sx = Math.sign(x) || 1;
+      // carving planes: a flat face front, flat temples, a jaw that narrows to the chin
+      if (z > 0 && y < 0.24) z = Math.min(z, 0.385 - 0.45 * Math.max(0, Math.abs(x) - 0.07));
+      x = sx * Math.min(Math.abs(x), 0.345);
+      if (y < -0.05) x = sx * Math.min(Math.abs(x), 0.3 - 0.26 * (-0.05 - y));
+      const ax = Math.abs(x);
+      // hair: a shell over the skull, ridged into combed-back locks, a crest down the back
+      const hl = hairline(ax, z);
+      const ear = Math.hypot(y / 0.11, (z + 0.03) / 0.065);
+      const hm = ax > 0.2 && ear < 1.25 ? 0 : smooth(hl, hl + 0.08, y);
+      hair[i] = hm;
+      if (hm > 0) {
+        const lock = 0.025 * tri(((x * 5 + 100.5) % 1) * 2 - 1) * smooth(0.2, 0.0, z);
+        const crest = 0.08 * tri(ax / 0.2) * smooth(-0.05, -0.4, z);
+        const quiff = 0.07 * smooth(-0.05, 0.25, z) * smooth(0.26, 0.42, y);
+        const h = (0.045 + lock + crest + quiff) * hm;
+        x += d.x * h; y += d.y * h; z += d.z * h;
       }
-      if (y < -0.3) x *= 1 - (-y - 0.3) * 0.5;   // jaw narrows towards the chin
-      pos.setXYZ(i, x * R, y * R, z * R);
+      if (z > 0.05) {
+        // nose: a ridge from the brow to the tip, then the wings
+        if (y > -0.16 && y < 0.13) {
+          const u = Math.min(1, (0.13 - y) / 0.25), w = 0.04 + 0.035 * u;
+          const tip = y < -0.12 ? 1 - (-0.12 - y) / 0.04 : 1;
+          if (ax < w) z += (0.015 + 0.095 * u ** 1.3) * (1 - ax / w) * tip;
+          if (y < -0.07 && y > -0.135 && ax < 0.085) z += 0.022 * tri((ax - 0.055) / 0.03);
+        }
+        z += 0.035 * smooth(0.105, 0.145, y) * (1 - smooth(0.17, 0.21, y)) * (1 - smooth(0.24, 0.31, ax));   // brow
+        const de = Math.hypot(ax - 0.125, (y - 0.065) / 0.75);
+        if (de < 0.075) z -= 0.05 * (1 - de / 0.075);   // eye socket
+        if (de < 0.034) z += 0.022 * (1 - de / 0.034);  // eyelid
+        const dc = Math.hypot(ax - 0.21, y + 0.02);
+        if (dc < 0.08) { z += 0.016 * (1 - dc / 0.08); x += sx * 0.012 * (1 - dc / 0.08); }   // cheekbone
+        if (y < -0.183 && y > -0.214) z += 0.02 * tri(ax / 0.09);    // upper lip
+        if (y < -0.212 && y > -0.224 && ax < 0.075) z -= 0.02;       // mouth
+        if (y < -0.224 && y > -0.256) z += 0.017 * tri(ax / 0.075);  // lower lip
+        if (y < -0.3 && y > -0.44) z += 0.03 * Math.sqrt(tri(ax / 0.12)) * tri((y + 0.37) / 0.07);   // chin
+      }
+      if (ax > 0.2 && ear < 1) x += sx * 0.07 * Math.sqrt(1 - ear);   // ears
+      pos.setXYZ(i, x * HEAD_S, y * HEAD_S, z * HEAD_S);
     }
+    g.setAttribute('hair', new THREE.Float32BufferAttribute(hair, 1));
     return g;
   }
   const headFacets = facet(sculptHead());
   {
-    // cubist split face, painted rather than grained so the face plane can be the lightest tone:
-    // facets facing forward pale, sides mid wood, back of the skull dark
-    const n = headFacets.attributes.normal, cols = [];
-    const pale = new THREE.Color('#ecd2a8'), mid = new THREE.Color('#c49a6c'), dark = new THREE.Color('#8f6a4a');
-    for (let i = 0; i < n.count; i++) {
-      const z = n.getZ(i), c = z > 0.55 ? pale : z < -0.3 ? dark : mid;
-      cols.push(c.r, c.g, c.b);
+    // painted rather than grained: facets facing forward pale, the sides mid wood, the hair darker
+    const n = headFacets.attributes.normal, hm = headFacets.attributes.hair, cols = [];
+    const pale = new THREE.Color('#ecd2a8'), mid = new THREE.Color('#c49a6c'), hairC = new THREE.Color('#a57a52'), c = new THREE.Color();
+    for (let i = 0; i < n.count; i += 3) {
+      const h = (hm.getX(i) + hm.getX(i + 1) + hm.getX(i + 2)) / 3;
+      const z = (n.getZ(i) + n.getZ(i + 1) + n.getZ(i + 2)) / 3;
+      c.lerpColors(mid, pale, smooth(0.1, 0.7, z)).lerp(hairC, h);
+      for (let k = 0; k < 3; k++) cols.push(c.r, c.g, c.b);
     }
     headFacets.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    headFacets.deleteAttribute('hair');
   }
   const headMat = toon('#ffffff', { vertexColors: true });
-  const hairGeo = new THREE.IcosahedronGeometry(0.58, 0); hairGeo.scale(1.0, 0.68, 1.02);
-  const hairFacets = facet(hairGeo), hairMat = toon('#6e4f36', { map: wood });
   function makePiece(headRot) {
     const head = new THREE.Mesh(headFacets, headMat);
-    head.position.y = NECK_TOP + 0.5;
+    head.position.y = HEAD_Y;
     head.rotation.copy(headRot);
-    const hair = new THREE.Mesh(hairFacets, hairMat);
-    hair.position.set(0, 0.36, -0.22); hair.rotation.set(0.5, 0.3, -0.15);   // swept back, clear of the brow
-    head.add(hair);
     const g = new THREE.Group();
     g.add(new THREE.Mesh(bodyGeo, woodMat), head);
     g.scale.setScalar(PIECE_S);
@@ -437,7 +482,7 @@ export function createScene({
   }
 
   // the one piece in the tower stands at the top, by the contact floor (clicking it is the easter egg)
-  const topPiece = makePiece(new THREE.Euler(0.32, 0.22, 0.03));   // chin down, looking at the visitor below
+  const topPiece = makePiece(new THREE.Euler(0.45, 0.22, 0.03));   // chin down, looking at the visitor below
   scene.add(topPiece);
   const topHalo = new THREE.Group();
   topHalo.add(new THREE.Mesh(new THREE.CircleGeometry(1.0, 22), new THREE.MeshBasicMaterial({ color: P.cream, fog: false })),
@@ -449,7 +494,7 @@ export function createScene({
     const i = Math.round((climbAngle(1) + 0.8) / STEP_ARC), a = i * STEP_ARC;
     topPiece.position.set(Math.cos(a) * 3.0, helixY(a) + 0.07, Math.sin(a) * 3.0);
     topPiece.lookAt(end.x, topPiece.position.y, end.z);
-    const head = topPiece.position.clone().setY(topPiece.position.y + (NECK_TOP + 0.5) * PIECE_S);
+    const head = topPiece.position.clone().setY(topPiece.position.y + HEAD_Y * PIECE_S);
     topHalo.position.copy(head).addScaledVector(head.clone().sub(end).normalize(), 1.6);
     topHalo.lookAt(end);
   }

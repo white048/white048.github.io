@@ -3,18 +3,18 @@
    Shared by the 3D scene and the simple page.
    ══════════════════════════════════════════════ */
 
-// Commissioned art (see the asset brief). `src: null` = not delivered yet,
-// so a poster is generated in code from `layout` + `title`. Drop the file
-// into assets/posters/ and set `src` to switch.
+// Commissioned art (see the asset brief), 1536×864 with the title printed on.
+// `src: null` = not delivered, so a poster is generated in code from
+// `layout` + `title` instead (placeholders.js).
 export const ASSETS = {
-  A02: { src: null, layout: 'circle', accent: 'teal', seed: 11, title: 'DIGITAL TWIN',        sub: 'HUAWEI · PREDICTIVE MAINTENANCE' },
-  A03: { src: null, layout: 'halo',   accent: 'red',  seed: 23, title: 'SPECIAL DELIVERY',    sub: 'CSC8503 · PHYSICS · AI · NETCODE' },
-  A04: { src: null, layout: 'waves',  accent: 'red',  seed: 31, title: 'LIGHT & WATER',       sub: 'CSC8502 · PBR · IBL · HDR' },
-  A05: { src: null, layout: 'blocks', accent: 'red',  seed: 47, title: 'BUILT TOGETHER',      sub: 'CSC8507/08 · TEAM OF FOUR' },
-  A06: { src: null, layout: 'split',  accent: 'red',  seed: 53, title: 'COOPERATE OR DEFECT', sub: "CSC8501 · PRISONER'S DILEMMA" },
-  A08: { src: null, layout: 'chess',  accent: 'teal', seed: 67, title: 'YOUR MOVE',           sub: 'DONG YIJUN · GET IN TOUCH' },
-  // not commissioned art: the door to the Token Forge game (clicking it on the wall opens the game)
-  A09: { src: null, layout: 'forge',  accent: 'red',  seed: 73, title: 'TOKEN FORGE',         sub: 'A GAME · CLICK TO PLAY', href: 'games/token-forge/' },
+  A02: { src: 'assets/posters/A02.webp', layout: 'circle', accent: 'teal', seed: 11, title: 'DIGITAL TWIN',        sub: 'HUAWEI · PREDICTIVE MAINTENANCE' },
+  A03: { src: 'assets/posters/A03.webp', layout: 'halo',   accent: 'red',  seed: 23, title: 'SPECIAL DELIVERY',    sub: 'CSC8503 · PHYSICS · AI · NETCODE' },
+  A04: { src: 'assets/posters/A04.webp', layout: 'waves',  accent: 'red',  seed: 31, title: 'LIGHT & WATER',       sub: 'CSC8502 · PBR · IBL · HDR' },
+  A05: { src: 'assets/posters/A05.webp', layout: 'blocks', accent: 'red',  seed: 47, title: 'BUILT TOGETHER',      sub: 'CSC8507/08 · TEAM OF FOUR' },
+  A06: { src: 'assets/posters/A06.webp', layout: 'split',  accent: 'red',  seed: 53, title: 'COOPERATE OR DEFECT', sub: "CSC8501 · PRISONER'S DILEMMA" },
+  A08: { src: 'assets/posters/A08.webp', layout: 'chess',  accent: 'teal', seed: 67, title: 'GET IN TOUCH',        sub: 'DONG YIJUN · YOUR MOVE' },
+  // the door to the Token Forge game (clicking it on the wall opens the game); the game's key art, B01
+  A09: { src: 'assets/posters/A09.webp', layout: 'forge',  accent: 'red',  seed: 73, title: 'TOKEN FORGE',         sub: 'A GAME · CLICK TO PLAY', href: 'games/token-forge/' },
 };
 
 /* Scroll progress p ∈ [0,1]:
