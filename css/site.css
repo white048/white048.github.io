@@ -123,7 +123,7 @@ html[data-lang="zh"] .tool--lang .l-zh, html[data-lang="en"] .tool--lang .l-en {
 .mode-3d .cred { text-shadow: 0 1px 3px rgba(0, 0, 0, .7); }
 .mode-3d .cred .stamp { background: var(--red); color: var(--paper); text-shadow: none; }
 .mode-simple .cred { color: var(--ink-2); }
-.mode-simple .cred .stamp { background: var(--paper-hi); }  /* stays legible where it crosses the red sun */
+.mode-simple .cred .stamp { background: var(--paper-hi); }  /* stays legible where it crosses the red handrail */
 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
@@ -185,14 +185,17 @@ html[data-lang="zh"] .tool--lang .l-zh, html[data-lang="en"] .tool--lang .l-en {
 }
 .mode-simple .floor { scroll-margin-top: calc(var(--bar-h) + 20px); border-top: 6px solid var(--ink); padding-top: 22px; }
 .mode-simple .floor--top { border: 0; padding: 56px 0 8px; position: relative; isolation: isolate; overflow: clip; }
-.mode-simple .floor--top::before {
+/* the tower seen from below: a spiral stair with treads cut into its band (::before) and the
+   red handrail on its outer turns (::after). Colours are --paper-lo, --paper and --red */
+.mode-simple .floor--top::before, .mode-simple .floor--top::after {
   content: ""; position: absolute; z-index: -1; right: 0; top: 0;
-  width: min(540px, 78vw); aspect-ratio: 1; border-radius: 50%;
-  background: repeating-conic-gradient(from 8deg, var(--paper-lo) 0 9deg, transparent 9deg 18deg);
+  width: min(540px, 78vw); aspect-ratio: 1;
+}
+.mode-simple .floor--top::before {
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke-linecap='round'><g transform='translate(0 -2.5)'><path d='M50 50A5 5 0 0 1 60 50A10 10 0 0 1 40 50A15 15 0 0 1 70 50A20 20 0 0 1 30 50A25 25 0 0 1 80 50A30 30 0 0 1 20 50A35 35 0 0 1 90 50A40 40 0 0 1 10 50' stroke='%23dccbab' stroke-width='4'/><path d='M50 50A5 5 0 0 1 60 50A10 10 0 0 1 40 50A15 15 0 0 1 70 50A20 20 0 0 1 30 50A25 25 0 0 1 80 50A30 30 0 0 1 20 50A35 35 0 0 1 90 50A40 40 0 0 1 10 50' stroke='%23eadcc2' stroke-width='4.2' stroke-linecap='butt' stroke-dasharray='.45 3.2'/></g></svg>") center / contain no-repeat;
 }
 .mode-simple .floor--top::after {
-  content: ""; position: absolute; z-index: -1; right: calc(min(540px, 78vw) * .38); top: calc(min(540px, 78vw) * .38);
-  width: calc(min(540px, 78vw) * .24); aspect-ratio: 1; border-radius: 50%; background: var(--red);
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke-linecap='round'><path transform='translate(0 -2.5)' d='M26.8 50A28.2 28.2 0 0 1 83.2 50A33.2 33.2 0 0 1 16.8 50A38.2 38.2 0 0 1 93.2 50A43.2 43.2 0 0 1 6.8 50' stroke='%23b23a25' stroke-width='1.1'/></svg>") center / contain no-repeat;
 }
 .mode-simple .btn--open, .mode-simple .btn--next, .mode-simple .panel-close { display: none; }
 .mode-simple .floor-body { margin-top: 26px; }
@@ -359,6 +362,7 @@ html[data-lang="zh"] .tool--lang .l-zh, html[data-lang="en"] .tool--lang .l-en {
   .mode-3d .floor-nav a b { color: var(--red); }
   .floor-nav a.is-active { border-bottom-color: var(--rule); background: var(--paper-lo); }
   .tool { padding: 7px 9px; }
+  .mode-simple .floor--top::after { display: none; }   /* the stair runs behind the text here: no red lines through it */
 }
 @media (max-width: 560px) {
   .brand { font-size: 26px; }

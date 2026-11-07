@@ -534,19 +534,30 @@ const PC = { ink: '#1d1916', red: '#b23a25', cream: '#eadcc2', sand: '#dccbab' }
 const fontsReady = () => Promise.all([document.fonts.load('150px "Bebas Neue"'), document.fonts.load('30px "Special Elite"')]).catch(() => {});
 const bebas = size => `${size}px "Bebas Neue", "Arial Narrow", sans-serif`;
 
-// paper, sunburst, red sun and the ink footer that every poster shares
+// a gear with n teeth from radius r to r + 50, one tooth centred on angle a, and a hole in the middle
+function cog(x, cx, cy, r, n, a, fill) {
+  const p = Math.PI * 2 / n;
+  x.fillStyle = fill; x.beginPath();
+  for (let i = 0; i < n; i++) {
+    const b = a + (i - 0.3) * p;
+    for (const [rr, f] of [[r, 0], [r + 50, 0.15], [r + 50, 0.45], [r, 0.6]]) x.lineTo(cx + Math.cos(b + f * p) * rr, cy + Math.sin(b + f * p) * rr);
+  }
+  x.closePath();
+  x.moveTo(cx + r * 0.36, cy); x.arc(cx, cy, r * 0.36, 0, Math.PI * 2, true);
+  x.fill();
+}
+
+// paper, a pair of meshing gears (the forge) and the ink footer that every poster shares
 function posterBase() {
   const W = 1080, H = 1350, c = document.createElement('canvas');
   c.width = W; c.height = H;
   const x = c.getContext('2d');
   x.fillStyle = PC.cream; x.fillRect(0, 0, W, H);
-  const cx = W * 0.78, cy = H * 0.74;
-  for (let i = 0; i < 28; i++) {
-    const a = (i / 28) * Math.PI * 2, b = ((i + 0.5) / 28) * Math.PI * 2;
-    x.fillStyle = PC.sand;
-    x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + Math.cos(a) * 2000, cy + Math.sin(a) * 2000); x.lineTo(cx + Math.cos(b) * 2000, cy + Math.sin(b) * 2000); x.fill();
-  }
-  x.fillStyle = PC.red; x.beginPath(); x.arc(cx, cy, 250, 0, Math.PI * 2); x.fill();
+  // a big sand gear up behind the headline turns a small red one low on the right; their
+  // pitch circles touch along `toward`, where a red tooth sits in a sand gap
+  const cx = W * 0.78, cy = H * 0.74, toward = -1.33;
+  cog(x, cx + Math.cos(toward) * 650, cy + Math.sin(toward) * 650, 380, 21, toward + Math.PI + Math.PI / 21, PC.sand);
+  cog(x, cx, cy, 220, 12, toward, PC.red);
   x.fillStyle = PC.ink; x.fillRect(0, H - 120, W, 120);
   x.font = '30px "Special Elite", "Courier New", monospace';
   x.fillStyle = PC.cream;
