@@ -508,11 +508,12 @@ export function createScene({
   // the piece is the one thing on the top floor that is not a picture: its wood is lifted a
   // little above the rest of the tower so it holds its own against them
   const woodMat = toon(PIECE_TONE, { map: wood });
-  // turned like the A01 turnaround: a two-step base, a concave body, a collar and a tall neck
-  const PIECE_S = 1.15, NECK_TOP = 2.1, HEAD_Y = 2.25, HEAD_S = 1.25;
+  // turned like the A01 turnaround (a two-step base, a concave body, a collar), then pulled out
+  // of proportion: a neck too long and too thin for a head too big
+  const PIECE_S = 1.15, NECK_TOP = 2.45, HEAD_Y = 2.62, HEAD_S = 1.5;
   const profile = [[0, 0], [0.62, 0], [0.635, 0.03], [0.635, 0.24], [0.6, 0.29], [0.555, 0.3], [0.555, 0.4], [0.535, 0.46], [0.48, 0.5],
     [0.43, 0.53], [0.37, 0.63], [0.325, 0.77], [0.295, 0.93], [0.275, 1.09], [0.265, 1.2],
-    [0.33, 1.22], [0.365, 1.25], [0.365, 1.32], [0.33, 1.36], [0.235, 1.37], [0.215, 1.42], [0.21, NECK_TOP], [0, NECK_TOP]]
+    [0.33, 1.22], [0.365, 1.25], [0.365, 1.32], [0.33, 1.36], [0.235, 1.37], [0.2, 1.42], [0.145, NECK_TOP], [0, NECK_TOP]]
     .map(([r, y]) => new THREE.Vector2(r, y));
   const bodyGeo = facet(new THREE.LatheGeometry(profile, 18));
 
@@ -541,7 +542,7 @@ export function createScene({
   function sculptHead() {
     const g = new THREE.IcosahedronGeometry(1, 11);
     const pos = g.attributes.position, d = new THREE.Vector3();
-    const hair = new Float32Array(pos.count);
+    const hair = new Float32Array(pos.count), side = new Float32Array(pos.count), eye = new Float32Array(pos.count), lip = new Float32Array(pos.count), slit = new Float32Array(pos.count);
     for (let i = 0; i < pos.count; i++) {
       d.fromBufferAttribute(pos, i).normalize();
       const t = Math.max(...VOLUMES.map(vol => reach(d, vol)));
@@ -566,42 +567,68 @@ export function createScene({
       }
       if (z > 0.05) {
         // nose: a ridge from the brow to the tip, then the wings
+        // The face is put together from views that do not agree, the cubist way: a nose in
+        // profile on a face seen from the front, two eyes of different kinds at different
+        // heights, a mouth that slants.
         if (y > -0.16 && y < 0.13) {
-          const u = Math.min(1, (0.13 - y) / 0.25), w = 0.04 + 0.035 * u;
+          // the nose swings to one side as it comes down, and stands well out
+          const u = Math.min(1, (0.13 - y) / 0.25), w = 0.045 + 0.04 * u;
           const tip = y < -0.12 ? 1 - (-0.12 - y) / 0.04 : 1;
-          if (ax < w) z += (0.015 + 0.095 * u ** 1.3) * (1 - ax / w) * tip;
-          if (y < -0.07 && y > -0.135 && ax < 0.085) z += 0.022 * tri((ax - 0.055) / 0.03);
+          const dn = Math.abs(x + 0.085 * u);
+          if (dn < w) z += (0.02 + 0.15 * u ** 1.3) * (1 - dn / w) * tip;
         }
         z += 0.035 * smooth(0.105, 0.145, y) * (1 - smooth(0.17, 0.21, y)) * (1 - smooth(0.24, 0.31, ax));   // brow
-        const de = Math.hypot(ax - 0.125, (y - 0.065) / 0.75);
-        if (de < 0.075) z -= 0.05 * (1 - de / 0.075);   // eye socket
-        if (de < 0.034) z += 0.022 * (1 - de / 0.034);  // eyelid
+        if (x < 0) {   // this eye: a small sunk slit
+          const de = Math.hypot(ax - 0.13, (y - 0.05) / 0.55);
+          if (de < 0.075) z -= 0.055 * (1 - de / 0.075);
+          if (de < 0.06) slit[i] = 1;
+        } else {       // that eye: a wide disc, set higher, staring
+          const de = Math.hypot(ax - 0.15, y - 0.135);
+          if (de < 0.115) { z += 0.035 * (1 - de / 0.115); eye[i] = de < 0.05 ? 1 : 0.5; }
+        }
         const dc = Math.hypot(ax - 0.21, y + 0.02);
         if (dc < 0.08) { z += 0.016 * (1 - dc / 0.08); x += sx * 0.012 * (1 - dc / 0.08); }   // cheekbone
-        if (y < -0.183 && y > -0.214) z += 0.02 * tri(ax / 0.09);    // upper lip
-        if (y < -0.212 && y > -0.224 && ax < 0.075) z -= 0.02;       // mouth
-        if (y < -0.224 && y > -0.256) z += 0.017 * tri(ax / 0.075);  // lower lip
+        const mx = Math.abs(x - 0.045), my = y + 0.3 * (x - 0.045);   // the mouth: off centre, on a slant
+        if (my < -0.178 && my > -0.214) { z += 0.024 * tri(mx / 0.11); if (mx < 0.1) lip[i] = 1; }    // upper lip
+        if (my < -0.212 && my > -0.224 && mx < 0.09) z -= 0.022;                                         // mouth
+        if (my < -0.224 && my > -0.262) { z += 0.02 * tri(mx / 0.09); if (mx < 0.08) lip[i] = 1; }    // lower lip
         if (y < -0.3 && y > -0.44) z += 0.03 * Math.sqrt(tri(ax / 0.12)) * tri((y + 0.37) / 0.07);   // chin
       }
-      if (ax > 0.2 && ear < 1) x += sx * 0.07 * Math.sqrt(1 - ear);   // ears
+      if (ax > 0.2 && ear < 1) x += sx * (sx > 0 ? 0.17 : 0.06) * Math.sqrt(1 - ear);   // ears: one of them far too big
+      // the head is cut in two along a slant and the halves no longer line up
+      if (x > 0.03 + 0.28 * y) { side[i] = 1; y += 0.075; z -= 0.04; x += 0.025; }
+      // and the whole of it leans: the crown one way, the jaw the other
+      if (y > 0.08) x += 0.16 * (y - 0.08);
+      if (y < -0.18) x -= 0.16 * (-0.18 - y);
       pos.setXYZ(i, x * HEAD_S, y * HEAD_S, z * HEAD_S);
     }
     g.setAttribute('hair', new THREE.Float32BufferAttribute(hair, 1));
+    g.setAttribute('side', new THREE.Float32BufferAttribute(side, 1));
+    g.setAttribute('eye', new THREE.Float32BufferAttribute(eye, 1));
+    g.setAttribute('lip', new THREE.Float32BufferAttribute(lip, 1));
+    g.setAttribute('slit', new THREE.Float32BufferAttribute(slit, 1));
     return g;
   }
   const headFacets = facet(sculptHead());
   {
-    // painted rather than grained: facets facing forward pale, the sides mid wood, the hair darker
-    const n = headFacets.attributes.normal, hm = headFacets.attributes.hair, cols = [];
-    const pale = new THREE.Color('#ecd2a8'), mid = new THREE.Color('#c49a6c'), hairC = new THREE.Color('#a57a52'), c = new THREE.Color();
+    // Painted in flat planes, in the page's four colours: one half of the face left as pale
+    // wood, the other half teal, the hair ink, the mouth red, and eyes of cream with ink pupils.
+    const A = headFacets.attributes, n = A.normal, cols = [];
+    const avg = (a, i) => (a.getX(i) + a.getX(i + 1) + a.getX(i + 2)) / 3;
+    const pale = new THREE.Color('#ecd2a8'), mid = new THREE.Color('#c49a6c'), c = new THREE.Color();
+    const teal = new THREE.Color(P.teal), tealDeep = new THREE.Color('#34504f'), ink = new THREE.Color(P.dark);
+    const red = new THREE.Color(P.red), white = new THREE.Color(P.cream);
     for (let i = 0; i < n.count; i += 3) {
-      const h = (hm.getX(i) + hm.getX(i + 1) + hm.getX(i + 2)) / 3;
-      const z = (n.getZ(i) + n.getZ(i + 1) + n.getZ(i + 2)) / 3;
-      c.lerpColors(mid, pale, smooth(0.1, 0.7, z)).lerp(hairC, h);
+      const z = avg(n, i), front = smooth(0.1, 0.7, z), e = avg(A.eye, i);
+      if (avg(A.side, i) > 0.5) c.lerpColors(tealDeep, teal, front); else c.lerpColors(mid, pale, front);
+      if (avg(A.hair, i) > 0.5) c.copy(ink);
+      if (avg(A.lip, i) > 0.5) c.copy(red);
+      if (e > 0.25) c.copy(e > 0.7 ? ink : white);
+      if (avg(A.slit, i) > 0.3) c.copy(ink);
       for (let k = 0; k < 3; k++) cols.push(c.r, c.g, c.b);
     }
     headFacets.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-    headFacets.deleteAttribute('hair');
+    for (const name of ['hair', 'side', 'eye', 'lip', 'slit']) headFacets.deleteAttribute(name);
   }
   const headMat = toon(PIECE_TONE, { vertexColors: true });
   function makePiece(headRot) {
@@ -615,7 +642,7 @@ export function createScene({
   }
 
   // the one piece in the tower stands at the top, by the contact floor (clicking it is the easter egg)
-  const topPiece = makePiece(new THREE.Euler(0.45, 0.22, 0.03));   // chin down, looking at the visitor below
+  const topPiece = makePiece(new THREE.Euler(0.62, -0.12, -0.16));   // chin down towards the visitor below, head cocked
   scene.add(topPiece);
   const topHalo = new THREE.Group();
   topHalo.add(new THREE.Mesh(new THREE.CircleGeometry(1.0, 22), new THREE.MeshBasicMaterial({ color: P.cream, fog: false })),
