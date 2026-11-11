@@ -23,12 +23,14 @@ const DWELL = 0.015;
 const CLIMB_FROM = 0.12;   // progress where the climb starts (after the opening look up)
 
 // ── Light: the knobs for the look, in one place ──
-const HEMI = 0.58, SUN = 3.0, RIM = 0.9;   // fill, the light from the oculus, the warm light from below
+const HEMI = 0.66, SUN = 3.0, RIM = 0.9;   // fill, the light from the oculus, the warm light from below
 const SUN_DIR = { inward: 1, along: -0.5, up: 0.78 };   // towards the light, from the wall being looked at
 const SUN_DIST = 30, SHADOW_BOX = 9, SHADOW_REACH = 7.6;   // shadow volume: half-width, and how far back casters count
 const LOW_SHADE = '.5';                    // tone of everything well below the visitor
-const WALL = '#6a5642';
-const BOOK_BASE = '#55483c', BOOK_QUIET = 0.5, BOOK_RED = 0.07;   // spines: pulled this far towards the base; share of red runs
+const WALL = '#4b4037';
+const BOOK_DARK = 0.95, BOOK_RED = 0.16;   // spines: lightness kept; share of runs that are red
+const FAR_GREY = '.5', FAR_DARK = '.15';   // books away from the visitor's height: colour and tone given up
+const HUSH_GREY = '.55', HUSH_DARK = '.45';   // the stair's underside on the opening look up
 const SHAFT = 0.06;                        // how strong the bands of light are (additive)
 const DIM = 0.5;                           // pictures on floors the visitor is not on
 
@@ -63,24 +65,35 @@ export function createScene({
   // Every toon surface also takes a flat tone from its height: bright towards the oculus, darker
   // below the visitor. Instanced pieces (books, steps) use their own origin, so each one stays a
   // single flat sheet of colour instead of carrying a gradient.
-  const shade = { uCamY: { value: 0 } };
-  const shadePatch = sh => {
+  // Two surfaces also give up some colour, through per-material weights: the books away from
+  // the visitor's own height (far), so colour gathers where the pictures are, and the striped
+  // underside of the stair on the opening look up (hush), so the stair and the title lead there.
+  const shade = { uCamY: { value: 0 }, uHero: { value: 1 } };
+  const shadePatch = function (sh) {
     sh.uniforms.uCamY = shade.uCamY;
+    sh.uniforms.uHero = shade.uHero;
+    sh.uniforms.uFar = { value: this.userData.far || 0 };
+    sh.uniforms.uHush = { value: this.userData.hush || 0 };
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uCamY; varying float vShade;')
+      .replace('#include <common>', '#include <common>\nuniform float uCamY, uHero, uFar, uHush; varying float vShade, vSat;')
       .replace('#include <project_vertex>', `#include <project_vertex>
         #ifdef USE_INSTANCING
           float shY = (modelMatrix * instanceMatrix[3]).y;
         #else
           float shY = (modelMatrix * vec4(transformed, 1.)).y;
         #endif
-        vShade = mix(${LOW_SHADE}, 1., smoothstep(-6.5, .4, shY - uCamY)) * mix(.9, 1.08, clamp(shY / ${H.toFixed(1)}, 0., 1.));`);
+        vShade = mix(${LOW_SHADE}, 1., smoothstep(-6.5, .4, shY - uCamY)) * mix(.9, 1.08, clamp(shY / ${H.toFixed(1)}, 0., 1.));
+        float away = smoothstep(2.2, 6.5, abs(shY - uCamY - 1.6));
+        vSat = (1. - ${FAR_GREY} * uFar * away) * (1. - ${HUSH_GREY} * uHush * uHero);
+        vShade *= (1. - ${FAR_DARK} * uFar * away) * (1. - ${HUSH_DARK} * uHush * uHero);`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying float vShade;')
-      .replace('#include <opaque_fragment>', 'outgoingLight *= vShade;\n#include <opaque_fragment>');
+      .replace('#include <common>', '#include <common>\nvarying float vShade, vSat;')
+      .replace('#include <opaque_fragment>',
+        'outgoingLight = mix(vec3(dot(outgoingLight, vec3(.299, .587, .114))), outgoingLight, vSat) * vShade;\n#include <opaque_fragment>');
   };
-  const toon = (color, extra = {}) => {
+  const toon = (color, extra = {}, weights = {}) => {
     const m = new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra });
+    Object.assign(m.userData, weights);
     m.onBeforeCompile = shadePatch;
     return m;
   };
@@ -147,7 +160,7 @@ export function createScene({
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     g.computeVertexNormals();
-    scene.add(lit(new THREE.Mesh(g, toon('#ffffff', { side: THREE.DoubleSide, vertexColors: true }))));
+    scene.add(lit(new THREE.Mesh(g, toon('#ffffff', { side: THREE.DoubleSide, vertexColors: true }, { hush: 1 }))));
   }
 
   // ── Red stringer + handrail, dark outer stringer ──
@@ -393,12 +406,17 @@ export function createScene({
 
   // ── Books (one instanced draw call) ──
   seed = 42;
-  // The shelves are the backdrop, not the subject: the spines are pulled most of the way
-  // towards one warm brown, so they sit close in tone, and red is kept back for a few short runs.
-  const quiet = (hex, k = BOOK_QUIET) => '#' + new THREE.Color(hex).lerp(new THREE.Color(BOOK_BASE), k).getHexString();
-  const bookPalette = [P.ink, P.dark, P.tan, P.grey, '#d4917f', P.sand, P.dark, P.grey].map(c => quiet(c))
-    .concat([quiet(P.teal, 0.28), quiet(P.teal, 0.28)]);   // the teal keeps more of itself: it is the cool note
-  const bookAccent = quiet(P.red, 0.12);
+  // The shelves are the backdrop, not the subject, but they keep the page's four colours: each
+  // spine is a palette colour made darker (a little less saturated, the hue left alone), so the
+  // wall is quiet in tone and still red, black, cream and teal. Red comes in short runs.
+  const hsl = { h: 0, s: 0, l: 0 };
+  const quiet = (hex, l = BOOK_DARK, sat = 0.92) => {
+    const c = new THREE.Color(hex); c.getHSL(hsl);
+    return '#' + c.setHSL(hsl.h, hsl.s * sat, hsl.l * l).getHexString();
+  };
+  const bookPalette = [quiet(P.ink, 1), quiet(P.dark, 1.25), quiet(P.teal), quiet(P.teal), quiet(P.teal, 0.7),
+    quiet(P.cream, 0.78, 0.8), quiet(P.sand, 0.66, 0.8), quiet(P.tan, 0.72), quiet(P.tan, 0.5), quiet(P.grey, 0.85)];
+  const bookAccent = [quiet(P.red, 0.95, 1), quiet(P.red, 0.7, 1)];
   const bookData = [];
   const ROW = 0.62;
   const shelfRows = Math.ceil((H + 6) / ROW);
@@ -409,7 +427,7 @@ export function createScene({
       if (runLeft-- <= 0) {
         const accent = rand() < BOOK_RED;
         runLeft = accent ? 2 + Math.floor(rand() * 4) : 4 + Math.floor(rand() * 14);
-        runCol = accent ? bookAccent : pick(bookPalette);
+        runCol = accent ? pick(bookAccent) : pick(bookPalette);
       }
       const w = 0.09 + rand() * 0.14, h = 0.3 + rand() * 0.22, d = 0.38 + rand() * 0.12;
       const da = w / R_WALL, ac = a + da / 2, yc = y0 + h / 2;
@@ -423,7 +441,7 @@ export function createScene({
       a += da + 0.003;
     }
   }
-  const books = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon('#ffffff'), bookData.length);
+  const books = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon('#ffffff', {}, { far: 1 }), bookData.length);
   bookData.forEach((b, i) => {
     const r = R_WALL - b.d / 2 - 0.02;
     v.set(Math.cos(b.a) * r, b.y, Math.sin(b.a) * r);
@@ -977,6 +995,7 @@ export function createScene({
 
     // light: aimed at the wall ahead, pictures of the current floor brought up, the rest held back
     shade.uCamY.value = camera.position.y;
+    shade.uHero.value = 1 - blend;
     aimSun(u);
     for (const g of glows) {
       const r = g.f.range;
