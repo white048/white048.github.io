@@ -22,6 +22,16 @@ const climbAngle = u => START_A + u * (TURNS - 1.2) * Math.PI * 2;
 const DWELL = 0.015;
 const CLIMB_FROM = 0.12;   // progress where the climb starts (after the opening look up)
 
+// ── Light: the knobs for the look, in one place ──
+const HEMI = 0.58, SUN = 3.0, RIM = 0.9;   // fill, the light from the oculus, the warm light from below
+const SUN_DIR = { inward: 1, along: -0.5, up: 0.78 };   // towards the light, from the wall being looked at
+const SUN_DIST = 30, SHADOW_BOX = 9, SHADOW_REACH = 7.6;   // shadow volume: half-width, and how far back casters count
+const LOW_SHADE = '.5';                    // tone of everything well below the visitor
+const WALL = '#6a5642';
+const BOOK_BASE = '#55483c', BOOK_QUIET = 0.5, BOOK_RED = 0.07;   // spines: pulled this far towards the base; share of red runs
+const SHAFT = 0.06;                        // how strong the bands of light are (additive)
+const DIM = 0.5;                           // pictures on floors the visitor is not on
+
 export function createScene({
   canvas, floors, mobile = false,
   onProgress = () => {},   // every frame, with the smoothed scroll progress
@@ -50,14 +60,58 @@ export function createScene({
   const ramp = new THREE.DataTexture(new Uint8Array([70, 70, 70, 255, 165, 165, 165, 255, 255, 255, 255, 255]), 3, 1);
   ramp.minFilter = ramp.magFilter = THREE.NearestFilter;
   ramp.needsUpdate = true;
-  const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra });
+  // Every toon surface also takes a flat tone from its height: bright towards the oculus, darker
+  // below the visitor. Instanced pieces (books, steps) use their own origin, so each one stays a
+  // single flat sheet of colour instead of carrying a gradient.
+  const shade = { uCamY: { value: 0 } };
+  const shadePatch = sh => {
+    sh.uniforms.uCamY = shade.uCamY;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform float uCamY; varying float vShade;')
+      .replace('#include <project_vertex>', `#include <project_vertex>
+        #ifdef USE_INSTANCING
+          float shY = (modelMatrix * instanceMatrix[3]).y;
+        #else
+          float shY = (modelMatrix * vec4(transformed, 1.)).y;
+        #endif
+        vShade = mix(${LOW_SHADE}, 1., smoothstep(-6.5, .4, shY - uCamY)) * mix(.9, 1.08, clamp(shY / ${H.toFixed(1)}, 0., 1.));`);
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vShade;')
+      .replace('#include <opaque_fragment>', 'outgoingLight *= vShade;\n#include <opaque_fragment>');
+  };
+  const toon = (color, extra = {}) => {
+    const m = new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra });
+    m.onBeforeCompile = shadePatch;
+    return m;
+  };
+  // cast: throws a shadow, recv: takes one
+  const lit = (o, cast = true, recv = true) => { o.castShadow = cast; o.receiveShadow = recv; return o; };
   const facet = g => { const n = g.index ? g.toNonIndexed() : g; n.computeVertexNormals(); return n; };
 
-  scene.add(new THREE.HemisphereLight(P.cream, P.dark, 1.35));
-  const sun = new THREE.DirectionalLight(P.cream, 2.4);   // light falling from the oculus
+  // A low fill, so the light from the oculus and the shadows it throws carry the picture.
+  scene.add(new THREE.HemisphereLight(P.cream, P.dark, HEMI));
+  // Light falling from the oculus. It swings round with the climb so it always comes down the
+  // stairwell onto the wall being looked at (see aimSun), and its shadows are hard-edged: with
+  // the toon ramp they read as one more layer of cut paper.
+  const sun = new THREE.DirectionalLight(P.cream, SUN);
   sun.position.set(1.5, 10, 2.5);
-  scene.add(sun);
-  const rim = new THREE.DirectionalLight('#d4917f', 0.9);
+  scene.add(sun, sun.target);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;   // unfiltered, the edge breaks into texel steps where the light grazes the wall
+  renderer.shadowMap.autoUpdate = false;   // redrawn only when the light moves
+  sun.castShadow = true;
+  sun.shadow.mapSize.setScalar(mobile ? 1024 : 2048);
+  sun.shadow.bias = -0.0012;
+  sun.shadow.normalBias = 0.04;
+  {
+    const c = sun.shadow.camera;
+    c.left = c.bottom = -SHADOW_BOX; c.right = c.top = SHADOW_BOX;
+    // the near plane sits just past the far side of the stairwell: flights further off than
+    // that are left out, so the light reaches the wall as if it came straight down the well
+    c.near = SUN_DIST - SHADOW_REACH; c.far = SUN_DIST + 12;
+    c.updateProjectionMatrix();
+  }
+  const rim = new THREE.DirectionalLight('#d4917f', RIM);
   rim.position.set(-4, -2, -3);
   scene.add(rim);
 
@@ -76,7 +130,7 @@ export function createScene({
     steps.setMatrixAt(i, m4.compose(v, q, s1));
     steps.setColorAt(i, new THREE.Color(stepColors[i % stepColors.length]));
   }
-  scene.add(steps);
+  scene.add(lit(steps));
 
   // ── Soffit: the striped helicoid underside you see looking up ──
   {
@@ -93,7 +147,7 @@ export function createScene({
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     g.computeVertexNormals();
-    scene.add(new THREE.Mesh(g, toon('#ffffff', { side: THREE.DoubleSide, vertexColors: true })));
+    scene.add(lit(new THREE.Mesh(g, toon('#ffffff', { side: THREE.DoubleSide, vertexColors: true }))));
   }
 
   // ── Red stringer + handrail, dark outer stringer ──
@@ -105,7 +159,7 @@ export function createScene({
     }
   }
   const tube = (r, dy, thick, color) =>
-    scene.add(new THREE.Mesh(facet(new THREE.TubeGeometry(new Helix(r, dy), TURNS * 60, thick, 5, false)), toon(color)));
+    scene.add(lit(new THREE.Mesh(facet(new THREE.TubeGeometry(new Helix(r, dy), TURNS * 60, thick, 5, false)), toon(color))));
   tube(R_IN - 0.05, -0.18, 0.16, P.red);
   tube(R_IN - 0.05, 1.05, 0.06, P.red);
   tube(R_OUT + 0.02, -0.2, 0.1, P.ink);
@@ -116,15 +170,19 @@ export function createScene({
     v.set(Math.cos(a) * (R_IN - 0.05), helixY(a) + 0.5, Math.sin(a) * (R_IN - 0.05));
     bal.setMatrixAt(i, m4.compose(v, q.identity(), s1));
   }
-  scene.add(bal);
+  scene.add(lit(bal));
 
   // ── Outer wall (faceted, low segment count on purpose) ──
-  scene.add(new THREE.Mesh(facet(new THREE.CylinderGeometry(R_WALL, R_WALL, H + 14, 22, 1, true)),
-    toon(P.tan, { side: THREE.BackSide })));
+  // the wall is the back of the shelves: kept dark, so the books and the pictures stand off it
+  scene.add(lit(new THREE.Mesh(facet(new THREE.CylinderGeometry(R_WALL, R_WALL, H + 14, 22, 1, true)),
+    toon(WALL, { side: THREE.BackSide })), false));
 
   // ── Camera poses ──
   const mouse = new THREE.Vector2(), mouseS = new THREE.Vector2();
-  const onPointer = e => mouse.set(e.clientX / innerWidth * 2 - 1, e.clientY / innerHeight * 2 - 1);
+  // the view leans a little with the pointer: a mouse only (a finger is busy scrolling), and
+  // not at all for visitors who asked for less motion
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const onPointer = e => { if (e.pointerType === 'mouse' && !calm) mouse.set(e.clientX / innerWidth * 2 - 1, e.clientY / innerHeight * 2 - 1); };
   addEventListener('pointermove', onPointer);
   function heroPose(spin, pos, tgt, up) {
     pos.set(1.5, 0.25, 0.3);
@@ -148,6 +206,22 @@ export function createScene({
     const t = -cd + Math.sqrt(cd * cd - (C.lengthSq() - R * R));
     const hit = C.clone().addScaledVector(D, t);
     return { a: Math.atan2(hit.y, hit.x) + 0.1, y: pos.y + t * (tgt.y - pos.y) / run };
+  }
+
+  // the light comes down the stairwell onto the stretch of wall the visitor faces at climb
+  // position u: from across the well, a little behind them, and from above
+  const sunDir = (a, out) => out.set(
+    -Math.cos(a) * SUN_DIR.inward - Math.sin(a) * SUN_DIR.along, SUN_DIR.up,
+    -Math.sin(a) * SUN_DIR.inward + Math.cos(a) * SUN_DIR.along).normalize();
+  const sunTo = new THREE.Vector3();
+  let sunU = -1, shadowDirty = true, shadowTick = false;
+  function aimSun(u) {
+    if (Math.abs(u - sunU) < 2e-5) return;
+    sunU = u;
+    const hit = wallHit(u), r = R_BOOK - 0.15;
+    sun.target.position.set(Math.cos(hit.a) * r, hit.y, Math.sin(hit.a) * r);
+    sun.position.copy(sun.target.position).addScaledVector(sunDir(hit.a, sunTo), SUN_DIST);
+    shadowDirty = true;
   }
 
   // scroll progress → climb position, slowing to a dwell at each floor
@@ -196,16 +270,37 @@ export function createScene({
   const frameMat = toon(P.ink);
   const blankMat = new THREE.MeshBasicMaterial({ color: P.sand });
   const loaders = {};       // floor id → () => void, loads that floor's textures once
-  const duotoneMat = map => new THREE.ShaderMaterial({
-    uniforms: { map: { value: map }, ink: { value: new THREE.Color(P.ink) }, paper: { value: new THREE.Color(P.cream) } },
-    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
-    fragmentShader: `uniform sampler2D map; uniform vec3 ink, paper; varying vec2 vUv;
-      void main(){ float l = dot(texture2D(map, vUv).rgb, vec3(.299,.587,.114));
-        gl_FragColor = vec4(mix(ink, paper, smoothstep(.0, .55, pow(l, .7))), 1.); }`,
+  // One material for every picture: the art as it is, or (duo) printed in two inks. It is
+  // unlit apart from two things: `lit`, which dims the pictures of floors the visitor is not
+  // on, and a band of shadow under the top and one side of the frame, which sets the print back.
+  const pictureMat = (map, lit, w, h, duo) => new THREE.ShaderMaterial({
+    uniforms: {
+      ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog),
+      map: { value: map }, ink: { value: new THREE.Color(P.ink) }, paper: { value: new THREE.Color(P.cream) },
+      uDuo: { value: duo ? 1 : 0 }, uLit: lit, uInset: { value: new THREE.Vector2(0.07 / w, 0.09 / h) },
+    },
+    fog: true,
+    vertexShader: `#include <common>
+      #include <fog_pars_vertex>
+      varying vec2 vUv;
+      void main(){ vUv = uv; vec4 mvPosition = modelViewMatrix * vec4(position, 1.); gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `#include <common>
+      #include <fog_pars_fragment>
+      uniform sampler2D map; uniform vec3 ink, paper; uniform float uDuo, uLit; uniform vec2 uInset; varying vec2 vUv;
+      void main(){
+        vec3 c = texture2D(map, vUv).rgb;
+        float l = dot(c, vec3(.299, .587, .114));
+        c = mix(c, mix(ink, paper, smoothstep(.0, .55, pow(l, .7))), uDuo);
+        float under = max(step(vUv.y, uInset.y), step(vUv.x, uInset.x));   // v runs down the picture
+        gl_FragColor = vec4(c * uLit * (1. - .42 * under), 1.);
+        #include <fog_fragment>
+      }`,
   });
   function addPoster(a, y, w, h) {
     const g = new THREE.Group();
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.08), frameMat);
+    const frame = lit(new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.08), frameMat));
     const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
     for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));   // textures arrive unflipped
     const pic = new THREE.Mesh(geo, blankMat);
@@ -243,7 +338,7 @@ export function createScene({
     const o = (portrait && p.portrait) || {};
     return { off: o.off ?? (p.off || 0) * SQUEEZE, dy: o.dy ?? (p.dy || 0) * SQUEEZE, w: o.w ?? w * SQUEEZE, h: o.h ?? h * SQUEEZE };
   };
-  const pickables = [];
+  const pickables = [], glows = [];
   for (const f of floors) {
     if (!f.posters) continue;
     const base = wallHit(f.stop);
@@ -264,6 +359,9 @@ export function createScene({
       scene.add(plate);
       posterRects.push({ a, y, half: Math.asin((s.w / 2 + 0.28) / r), hh: s.h / 2 + 0.28 });
     }
+    // how brightly this floor's pictures are shown: full while the visitor is on it
+    const glow = { value: DIM };
+    glows.push({ f, glow });
     let loaded = false;
     loaders[f.id] = () => {
       if (loaded) return;
@@ -284,7 +382,8 @@ export function createScene({
           tex.flipY = false;
           tex.needsUpdate = true;
           renderer.initTexture(tex);   // upload now, not on the frame it first comes into view
-          mesh.material = p.duotone ? duotoneMat(tex) : new THREE.MeshBasicMaterial({ map: tex });
+          const { width, height } = mesh.geometry.parameters;
+          mesh.material = pictureMat(tex, glow, width, height, p.duotone);
         };
         if (src) loadPicture(src).then(img => apply(new THREE.Texture(img)), () => {});
         else postersReady().then(() => apply(new THREE.CanvasTexture(placeholderCanvas(p.asset, asset))));
@@ -294,7 +393,12 @@ export function createScene({
 
   // ── Books (one instanced draw call) ──
   seed = 42;
-  const bookPalette = [P.ink, P.ink, P.red, P.red, P.teal, P.tan, P.cream, '#d4917f', P.grey, P.dark];
+  // The shelves are the backdrop, not the subject: the spines are pulled most of the way
+  // towards one warm brown, so they sit close in tone, and red is kept back for a few short runs.
+  const quiet = (hex, k = BOOK_QUIET) => '#' + new THREE.Color(hex).lerp(new THREE.Color(BOOK_BASE), k).getHexString();
+  const bookPalette = [P.ink, P.dark, P.tan, P.grey, '#d4917f', P.sand, P.dark, P.grey].map(c => quiet(c))
+    .concat([quiet(P.teal, 0.28), quiet(P.teal, 0.28)]);   // the teal keeps more of itself: it is the cool note
+  const bookAccent = quiet(P.red, 0.12);
   const bookData = [];
   const ROW = 0.62;
   const shelfRows = Math.ceil((H + 6) / ROW);
@@ -302,7 +406,11 @@ export function createScene({
     const y0 = row * ROW - 2;
     let a = 0, runLeft = 0, runCol = P.ink;
     while (a < Math.PI * 2) {
-      if (runLeft-- <= 0) { runLeft = 4 + Math.floor(rand() * 14); runCol = pick(bookPalette); }
+      if (runLeft-- <= 0) {
+        const accent = rand() < BOOK_RED;
+        runLeft = accent ? 2 + Math.floor(rand() * 4) : 4 + Math.floor(rand() * 14);
+        runCol = accent ? bookAccent : pick(bookPalette);
+      }
       const w = 0.09 + rand() * 0.14, h = 0.3 + rand() * 0.22, d = 0.38 + rand() * 0.12;
       const da = w / R_WALL, ac = a + da / 2, yc = y0 + h / 2;
       const blocked = posterRects.some(p => {
@@ -323,7 +431,7 @@ export function createScene({
     books.setMatrixAt(i, m4.compose(v, q, new THREE.Vector3(b.d, b.h, b.w)));
     books.setColorAt(i, new THREE.Color(b.col));
   });
-  scene.add(books);
+  scene.add(lit(books));
 
   // shelf boards (square-section rings), instanced
   const shelves = new THREE.InstancedMesh(facet(new THREE.TorusGeometry(R_WALL - 0.24, 0.035, 4, 44)), toon(P.dark), shelfRows);
@@ -331,7 +439,7 @@ export function createScene({
     q.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
     shelves.setMatrixAt(row, m4.compose(v.set(0, row * ROW - 2, 0), q, s1));
   }
-  scene.add(shelves);
+  scene.add(lit(shelves));
 
   // ── Oculus: the light you climb towards ──
   const oculus = new THREE.Mesh(new THREE.CircleGeometry(R_WALL, 22), new THREE.MeshBasicMaterial({ color: P.cream, fog: false }));
@@ -349,7 +457,11 @@ export function createScene({
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 7);
     t.magFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(R_WALL, 22), toon('#ffffff', { map: t }));
+    // darker towards the foot of the wall (the fan's first vertex is the centre)
+    const fg = new THREE.CircleGeometry(R_WALL, 22), fc = [];
+    for (let i = 0; i < fg.attributes.position.count; i++) { const k = i ? 0.5 : 1.1; fc.push(k, k, k); }
+    fg.setAttribute('color', new THREE.Float32BufferAttribute(fc, 3));
+    const floor = lit(new THREE.Mesh(fg, toon('#ffffff', { map: t, vertexColors: true })), false);
     floor.rotation.x = -Math.PI / 2; floor.position.y = -0.02;
     scene.add(floor);
   }
@@ -374,7 +486,10 @@ export function createScene({
     return t;
   }
   const wood = woodTexture();
-  const woodMat = toon('#ffffff', { map: wood });
+  const PIECE_TONE = new THREE.Color().setScalar(1.4);
+  // the piece is the one thing on the top floor that is not a picture: its wood is lifted a
+  // little above the rest of the tower so it holds its own against them
+  const woodMat = toon(PIECE_TONE, { map: wood });
   // turned like the A01 turnaround: a two-step base, a concave body, a collar and a tall neck
   const PIECE_S = 1.15, NECK_TOP = 2.1, HEAD_Y = 2.25, HEAD_S = 1.25;
   const profile = [[0, 0], [0.62, 0], [0.635, 0.03], [0.635, 0.24], [0.6, 0.29], [0.555, 0.3], [0.555, 0.4], [0.535, 0.46], [0.48, 0.5],
@@ -470,13 +585,13 @@ export function createScene({
     headFacets.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
     headFacets.deleteAttribute('hair');
   }
-  const headMat = toon('#ffffff', { vertexColors: true });
+  const headMat = toon(PIECE_TONE, { vertexColors: true });
   function makePiece(headRot) {
     const head = new THREE.Mesh(headFacets, headMat);
     head.position.y = HEAD_Y;
     head.rotation.copy(headRot);
     const g = new THREE.Group();
-    g.add(new THREE.Mesh(bodyGeo, woodMat), head);
+    g.add(lit(new THREE.Mesh(bodyGeo, woodMat)), lit(head));
     g.scale.setScalar(PIECE_S);
     return g;
   }
@@ -536,13 +651,93 @@ export function createScene({
   const paperGeo = new THREE.PlaneGeometry(0.26, 0.36);
   seed = 99;
   for (let i = 0; i < (mobile ? 40 : 70); i++) {
-    const m = new THREE.Mesh(paperGeo, paperMat);
+    const m = lit(new THREE.Mesh(paperGeo, paperMat), false);
     const r = 0.55 + rand() * (R_IN - 0.95), a = rand() * Math.PI * 2;
     m.position.set(Math.cos(a) * r, 10 + rand() * (H - 8), Math.sin(a) * r);
     m.rotation.set(rand() * 6, rand() * 6, rand() * 6);
     m.userData = { sp: 0.15 + rand() * 0.35, rs: (rand() - 0.5) * 0.8 };
     scene.add(m); papers.push(m);
   }
+
+  // ── Shafts of light and dust ──
+  // A few pale, hard-edged bands of light slant down the stairwell onto each floor's wall, along
+  // that floor's light. They are parallel strips seen from the side, never a fan: on the opening
+  // look up the well they would line up into rays, so there they are faded out altogether.
+  const shaftMat = new THREE.MeshBasicMaterial({
+    color: P.cream, vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+    depthWrite: false, side: THREE.DoubleSide, fog: false,
+  });
+  const shafts = [];
+  const shaftGroup = new THREE.Group();
+  seed = 271;
+  for (const gl of glows) {
+    const f = gl.f;
+    const hit = wallHit(f.stop), dir = sunDir(hit.a, new THREE.Vector3());
+    gl.shaft = shaftMat.clone();   // each floor's bands show only while the visitor is on it
+    for (const [off, dy, w] of [[-0.6, 0.9, 0.46], [0.44, 1.5, 0.85]]) {
+      const a = hit.a + off + (rand() - 0.5) * 0.12, r = R_WALL - 0.5;
+      const foot = new THREE.Vector3(Math.cos(a) * r, hit.y + dy, Math.sin(a) * r);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(18, 3));
+      // three pairs of corners (foot, part-way, top): brightest part-way up, gone at both ends
+      geo.setAttribute('color', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0], 3));
+      geo.setIndex([0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4]);
+      const mesh = new THREE.Mesh(geo, gl.shaft);
+      mesh.frustumCulled = false;
+      shaftGroup.add(mesh);
+      shafts.push({ pos: geo.attributes.position, pts: [foot, foot.clone().addScaledVector(dir, 2.2), foot.clone().addScaledVector(dir, 6)], w: w / 2 });
+    }
+  }
+  scene.add(shaftGroup);
+  // each strip turns about its own length to face the visitor
+  const shSide = new THREE.Vector3(), shAxis = new THREE.Vector3();
+  function faceShafts() {
+    for (const s of shafts) {
+      shAxis.subVectors(s.pts[2], s.pts[0]);
+      shSide.subVectors(camera.position, s.pts[1]).cross(shAxis).normalize().multiplyScalar(s.w);
+      for (let i = 0; i < 3; i++) {
+        const p = s.pts[i];
+        s.pos.setXYZ(i * 2, p.x - shSide.x, p.y - shSide.y, p.z - shSide.z);
+        s.pos.setXYZ(i * 2 + 1, p.x + shSide.x, p.y + shSide.y, p.z + shSide.z);
+      }
+      s.pos.needsUpdate = true;
+    }
+  }
+
+  // dust: small square motes drifting up around the visitor, wrapped to a band about their height
+  const DUST = mobile ? 70 : 150;
+  const dustMat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uCamY: shade.uCamY, uPx: { value: 400 }, uColor: { value: new THREE.Color(P.cream) } },
+    vertexShader: `uniform float uTime, uCamY, uPx; attribute float aS; varying float vA;
+      void main(){
+        vec3 p = position;
+        float band = mod(p.y + uTime * (.04 + .09 * aS) - uCamY, 14.);
+        p.y = uCamY + band - 6.;
+        p.x += sin(uTime * .21 + aS * 40.) * .22; p.z += cos(uTime * .17 + aS * 23.) * .22;
+        vec4 mv = viewMatrix * vec4(p, 1.);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = min(5., uPx * projectionMatrix[1][1] * (.016 + .028 * aS) / -mv.z);
+        vA = smoothstep(0., 1.5, band) * smoothstep(14., 12.5, band) * smoothstep(.7, 2.2, -mv.z) * (.2 + .4 * fract(aS * 7.));
+      }`,
+    fragmentShader: 'uniform vec3 uColor; varying float vA; void main(){ gl_FragColor = vec4(uColor, vA); }',
+    transparent: true, depthWrite: false,
+  });
+  const dust = (() => {
+    const pos = [], sz = [];
+    seed = 1618;
+    for (let i = 0; i < DUST; i++) {
+      const r = Math.sqrt(rand()) * (R_OUT - 0.2), a = rand() * Math.PI * 2;
+      pos.push(Math.cos(a) * r, rand() * 14, Math.sin(a) * r);
+      sz.push(rand());
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('aS', new THREE.Float32BufferAttribute(sz, 1));
+    const pts = new THREE.Points(g, dustMat);
+    pts.frustumCulled = false;
+    scene.add(pts);
+    return pts;
+  })();
 
   // ── Post: linear → sRGB, gouache mottling, paper fibre, cut-paper edges, grain ──
   // half float keeps the darks of the linear scene from banding, but not every GPU can render
@@ -622,6 +817,7 @@ export function createScene({
     camera.updateProjectionMatrix();
     post.uniforms.uRes.value.set(w * pr, h * pr);
     paperBake.uniforms.uRes.value.set(w * pr, h * pr);
+    dustMat.uniforms.uPx.value = h * pr / 2;
     paperDirty = true;
   }
   addEventListener('resize', resize);
@@ -635,11 +831,16 @@ export function createScene({
     dummy.colorSpace = THREE.SRGBColorSpace;
     const later = new THREE.Group();   // never added to the scene
     const quad = new THREE.PlaneGeometry(1, 1);
-    for (const m of [new THREE.MeshBasicMaterial({ map: dummy }), duotoneMat(dummy),
+    for (const m of [pictureMat(dummy, { value: 1 }, 1, 1, false),
       new THREE.MeshBasicMaterial({ map: dummy, transparent: true, alphaTest: 0.5 })]) later.add(new THREE.Mesh(quad, m));
     // programs depend on the target they draw into, so compile each pass against its own
     renderer.setRenderTarget(target);
-    const jobs = [renderer.compileAsync(scene, camera), renderer.compileAsync(later, camera, scene)];
+    // lit surfaces have two programs each, with and without the shadow: the lowest quality level
+    // turns the shadow off, and must not stop to compile at the moment the page is struggling
+    sun.castShadow = false;
+    const jobs = [renderer.compileAsync(scene, camera)];
+    sun.castShadow = true;
+    jobs.push(renderer.compileAsync(scene, camera), renderer.compileAsync(later, camera, scene));
     renderer.setRenderTarget(paperTarget);
     postQuad.material = paperBake;
     jobs.push(renderer.compileAsync(postScene, postCam));
@@ -687,10 +888,23 @@ export function createScene({
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); running = false; cancelAnimationFrame(raf); onLost(); });
 
   // ── Adaptive quality: drop resolution, then MSAA, before giving up ──
+  //    The light follows the same ladder: a smaller shadow map at the middle level, and at the
+  //    lowest no shadow, shafts or dust at all.
   const QUALITY = [dpr, Math.min(dpr, 1), 0.75];
-  let level = 0, samples = [], slowReported = false;
+  let level = 0, samples = [], slowReported = false, held = false;
+  function applyLight() {
+    const fx = level < QUALITY.length - 1;
+    sun.castShadow = fx;
+    shaftGroup.visible = dust.visible = fx;
+    const size = level === 0 && !mobile ? 2048 : 1024;
+    if (sun.shadow.mapSize.x !== size) {
+      sun.shadow.mapSize.setScalar(size);
+      if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+    }
+    shadowDirty = true;
+  }
   function measure(dtMs) {
-    if (dtMs > 250) return;   // tab switch or a hitch, not a real frame
+    if (held || dtMs > 250) return;   // tab switch or a hitch, not a real frame
     samples.push(dtMs);
     if (samples.length < 90) return;
     const sorted = samples.slice(20).sort((a, b) => a - b);
@@ -702,6 +916,7 @@ export function createScene({
       level++;
       renderer.setPixelRatio(QUALITY[level]);
       if (target.samples) { target.samples = 0; target.dispose(); }
+      applyLight();
       resize();
     } else if (!slowReported) {
       slowReported = true;
@@ -713,6 +928,7 @@ export function createScene({
   const hp = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const cp = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
   const tmpP = new THREE.Vector3(), tmpT = new THREE.Vector3(), tmpU = new THREE.Vector3();
+  const camRight = new THREE.Vector3(), camUp = new THREE.Vector3();
   let goal = 0, prog = 0, running = false, raf = 0, first = true, time = 0, last = 0, drawn = 0, skipped = false;
 
   function frame(now) {
@@ -739,15 +955,42 @@ export function createScene({
     mouseS.lerp(mouse, ease(0.05));
     animateHop(t);
     heroPose(turn * 0.5, ...hp);
-    climbPose(progToClimb(prog), ...cp);
+    const u = progToClimb(prog);
+    climbPose(u, ...cp);
     tmpP.lerpVectors(hp[0], cp[0], blend);
     tmpT.lerpVectors(hp[1], cp[1], blend);
     tmpU.lerpVectors(hp[2], cp[2], blend).normalize();
     camera.position.copy(tmpP);
     camera.up.copy(tmpU);
     camera.lookAt(tmpT);
+    if (blend > 0) {
+      // on the climb the pointer slides the eye sideways and turns the head a little the same
+      // way, so the handrail moves against the wall behind it
+      const mx = mouseS.x * blend, my = -mouseS.y * blend;
+      camRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
+      camUp.set(0, 1, 0).applyQuaternion(camera.quaternion);
+      camera.position.addScaledVector(camRight, mx * 0.16).addScaledVector(camUp, my * 0.09);
+      camera.lookAt(tmpT.addScaledVector(camRight, mx * 0.34).addScaledVector(camUp, my * 0.2));
+    }
     climbing = blend > 0.95;
     updateHover(ease);
+
+    // light: aimed at the wall ahead, pictures of the current floor brought up, the rest held back
+    shade.uCamY.value = camera.position.y;
+    aimSun(u);
+    for (const g of glows) {
+      const r = g.f.range;
+      const on = THREE.MathUtils.smoothstep(prog, r[0] - 0.07, r[0] - 0.01) * (1 - THREE.MathUtils.smoothstep(prog, r[1] + 0.01, r[1] + 0.07));
+      g.glow.value = DIM + (1 - DIM) * on;
+      g.shaft.opacity = SHAFT * on * blend;
+    }
+    if (shaftGroup.visible) {
+      faceShafts();
+      dustMat.uniforms.uTime.value = t;
+    }
+    // the shadow is redrawn only while the light is moving (or the piece is hopping), and then on
+    // alternate frames: it turns slowly enough that a frame's lag cannot be seen
+    if (sun.castShadow && (shadowDirty || hopT0 !== null) && (shadowTick = !shadowTick)) { renderer.shadowMap.needsUpdate = true; shadowDirty = false; }
 
     for (const p of papers) {
       p.position.y += p.userData.sp * 0.006 * n;
@@ -795,6 +1038,15 @@ export function createScene({
     },
     stop() { running = false; cancelAnimationFrame(raf); },
     get quality() { return level; },
+    // ?debug only: hold one quality level, to look at it or time it
+    ...(location.search.includes('debug') ? { setQuality(n) {
+      held = true;
+      level = Math.max(0, Math.min(QUALITY.length - 1, n));
+      renderer.setPixelRatio(QUALITY[level]);
+      const s = level ? 0 : 4;
+      if (target.samples !== s) { target.samples = s; target.dispose(); }
+      applyLight(); resize();
+    } } : {}),
     dispose() {
       this.stop();
       removeEventListener('resize', resize);
