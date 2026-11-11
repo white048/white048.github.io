@@ -28,15 +28,17 @@ const DESCRIPTIONS = {
   zh: '董一均 Dong Yijun：游戏设计师与工程师，纽卡斯尔大学计算机游戏工程硕士（Distinction）。毕业设计《Until They Forget》、华为数字孪生实习、C++ 引擎系统课程项目与插画。',
   en: 'Dong Yijun, game designer and engineer, MSc Computer Game Engineering (Distinction), Newcastle University: Until They Forget, a serious game about cognitive bias; a Huawei digital-twin internship; C++ engine systems; illustration.',
 };
-function setLang(lang) {
+function setLang(lang, chosen = false) {
   root.dataset.lang = lang;
   root.lang = lang === 'en' ? 'en' : 'zh-CN';
   document.title = TITLES[lang];
   $('meta[name="description"]').setAttribute('content', DESCRIPTIONS[lang]);
-  store.set('lang', lang);
+  // Only a click on the button is remembered: the page opens in English otherwise.
+  // 'lang' is written too, for Token Forge, which reads that key.
+  if (chosen) { store.set('langChoice', lang); store.set('lang', lang); }
 }
-setLang(root.dataset.lang === 'en' ? 'en' : 'zh');
-$('#langToggle').addEventListener('click', () => setLang(root.dataset.lang === 'en' ? 'zh' : 'en'));
+setLang(root.dataset.lang === 'zh' ? 'zh' : 'en');
+$('#langToggle').addEventListener('click', () => setLang(root.dataset.lang === 'en' ? 'zh' : 'en', true));
 
 // ── Toast ──
 const toastEl = $('#toast');

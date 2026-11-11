@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="mode-simple" data-lang="zh">
+<html lang="en" class="mode-simple" data-lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>董一均 Dong Yijun — 游戏设计与开发</title>
-  <meta name="description" content="董一均 Dong Yijun：游戏设计师与工程师，纽卡斯尔大学计算机游戏工程硕士（Distinction）。毕业设计《Until They Forget》、华为数字孪生实习、C++ 引擎系统课程项目与插画。" />
+  <title>Dong Yijun 董一均 — Game Designer &amp; Engineer</title>
+  <meta name="description" content="Dong Yijun, game designer and engineer, MSc Computer Game Engineering (Distinction), Newcastle University: Until They Forget, a serious game about cognitive bias; a Huawei digital-twin internship; C++ engine systems; illustration." />
   <meta name="theme-color" content="#1d1916" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Dong Yijun 董一均 — Game Designer & Engineer" />
@@ -90,7 +90,9 @@
     // Decide 3D vs simple before first paint, so nothing flashes.
     (function () {
       var d = document.documentElement, mode = null, lang = null;
-      try { mode = localStorage.getItem('mode'); lang = localStorage.getItem('lang'); } catch (e) {}
+      // the page opens in English; Chinese is one click away, and only a choice made with the
+      // language button is remembered (langChoice: the older 'lang' key also held guesses)
+      try { mode = localStorage.getItem('mode'); lang = localStorage.getItem('langChoice'); } catch (e) {}
       var q = new URLSearchParams(location.search);
       if (q.get('mode')) mode = q.get('mode');
       if (q.get('lang')) lang = q.get('lang');
@@ -107,11 +109,7 @@
           var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = href; document.head.appendChild(l);
         });
       }
-      if (lang !== 'en' && lang !== 'zh') {   // first visit: follow the browser's preferred language
-        var pref = (navigator.languages && navigator.languages[0]) || navigator.language || '';
-        lang = /^zh/i.test(pref) ? 'zh' : 'en';
-      }
-      lang = lang === 'en' ? 'en' : 'zh';
+      lang = lang === 'zh' ? 'zh' : 'en';
       d.dataset.lang = lang;
       d.lang = lang === 'en' ? 'en' : 'zh-CN';
     })();
