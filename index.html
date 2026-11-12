@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="mode-simple" data-lang="zh">
+<html lang="en" class="mode-simple" data-lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>董一均 Dong Yijun — 游戏设计与开发</title>
-  <meta name="description" content="董一均 Dong Yijun：游戏设计师与工程师，纽卡斯尔大学计算机游戏工程硕士（Distinction）。毕业设计《Until They Forget》、华为数字孪生实习、C++ 引擎系统课程项目与插画。" />
+  <title>Dong Yijun 董一均 — Game Designer &amp; Engineer</title>
+  <meta name="description" content="Dong Yijun, game designer and engineer, MSc Computer Game Engineering (Distinction), Newcastle University: Until They Forget, a serious game about cognitive bias; a Huawei digital-twin internship; C++ engine systems; illustration." />
   <meta name="theme-color" content="#1d1916" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Dong Yijun 董一均 — Game Designer & Engineer" />
@@ -90,7 +90,9 @@
     // Decide 3D vs simple before first paint, so nothing flashes.
     (function () {
       var d = document.documentElement, mode = null, lang = null;
-      try { mode = localStorage.getItem('mode'); lang = localStorage.getItem('lang'); } catch (e) {}
+      // the page opens in English; Chinese is one click away, and only a choice made with the
+      // language button is remembered (langChoice: the older 'lang' key also held guesses)
+      try { mode = localStorage.getItem('mode'); lang = localStorage.getItem('langChoice'); } catch (e) {}
       var q = new URLSearchParams(location.search);
       if (q.get('mode')) mode = q.get('mode');
       if (q.get('lang')) lang = q.get('lang');
@@ -107,11 +109,7 @@
           var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = href; document.head.appendChild(l);
         });
       }
-      if (lang !== 'en' && lang !== 'zh') {   // first visit: follow the browser's preferred language
-        var pref = (navigator.languages && navigator.languages[0]) || navigator.language || '';
-        lang = /^zh/i.test(pref) ? 'zh' : 'en';
-      }
-      lang = lang === 'en' ? 'en' : 'zh';
+      lang = lang === 'zh' ? 'zh' : 'en';
       d.dataset.lang = lang;
       d.lang = lang === 'en' ? 'en' : 'zh-CN';
     })();
@@ -179,8 +177,8 @@
         <p class="idx"><span class="en" lang="en">01 · Flagship · MSc dissertation</span><span class="zh" lang="zh-CN">01 · 旗舰作品 · 硕士毕业设计</span></p>
         <h2 class="banner" id="utf-title">UNTIL THEY FORGET</h2>
         <p class="sub">
-          <span class="en" lang="en">A critical-reflective serious game about cognitive bias. Unity · 2026 · Coming to Steam</span>
-          <span class="zh" lang="zh-CN">一款关于认知偏差的批判性严肃游戏。Unity · 2026 · 筹备上架 Steam</span>
+          <span class="en" lang="en">A serious game about cognitive bias: you turn one family's dead into propaganda gods. Unity · 2026 · Coming to Steam</span>
+          <span class="zh" lang="zh-CN">一款关于认知偏差的严肃游戏：把一家人的逝者做成宣传之神。Unity · 2026 · 筹备上架 Steam</span>
         </p>
         <div class="actions">
           <button class="btn btn--open btn--red" type="button" data-open="utf"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
@@ -191,7 +189,7 @@
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
         <figure class="lead-img"><img src="assets/utf/she-chose-life.webp" alt="Until They Forget poster: SHE CHOSE LIFE" width="1600" height="900" loading="lazy" data-zoom /></figure>
         <p class="en lead" lang="en">Built for the brief “Simulation for cognitive bias training”, <em>Until They Forget</em> does not teach the player to correct a bias. It places them inside the pleasure of committing one. Across six acts and a finale, the player listens to the grieving survivors of one family and compresses each of the dead into a propaganda god made of just two traits, which the same crowd then worships and tears down.</p>
-        <p class="zh lead" lang="zh-CN">这款游戏针对"认知偏差训练模拟"的命题而做，但它不教玩家纠正偏差，而是让玩家亲身体会犯下偏差的快感。在六幕加终章里，玩家倾听一个家庭里幸存者的回忆，把每一位逝者压缩成只由两个特质构成的宣传之神，再看着同一群人先膜拜它、再把它撕毁。</p>
+        <p class="zh lead" lang="zh-CN">这款游戏的命题是“认知偏差训练模拟”，但它不教玩家纠正偏差，而是让玩家亲身尝到犯下偏差的快感。六幕加一个终章里，玩家听一家人中的幸存者讲述，把每位逝者压缩成只有两个特质的宣传之神，再看着同一群人先膜拜它、后撕毁它。</p>
 
         <div class="yt" data-yt="oaQiNyznSO8">
           <button class="yt-play" type="button"><span class="en" lang="en">▶ Play the narrated demo</span><span class="zh" lang="zh-CN">▶ 播放带旁白的演示视频</span></button>
@@ -200,7 +198,7 @@
 
         <h3><span class="en" lang="en">Design highlights</span><span class="zh" lang="zh-CN">设计要点</span></h3>
         <ul class="points">
-          <li><span class="en" lang="en"><b>The Cognitive Bias Codex as structure.</b> Its four quadrants map one-to-one onto the four steps of the central ritual: overhear, assemble, choose two, enshrine.</span><span class="zh" lang="zh-CN"><b>把认知偏差图谱当作结构，而不是内容。</b>四个象限一一对应核心仪式的四步：偷听、拼凑、二选、封神。</span></li>
+          <li><span class="en" lang="en"><b>The Cognitive Bias Codex as structure, not content.</b> Its four quadrants map one-to-one onto the four steps of the central ritual: overhear, assemble, choose two, enshrine.</span><span class="zh" lang="zh-CN"><b>把认知偏差图谱当作结构，而不是内容。</b>四个象限一一对应核心仪式的四步：偷听、拼凑、二选、封神。</span></li>
           <li><span class="en" lang="en"><b>Authored convergence.</b> Every pair of traits resolves to one of at most three pre-written gods, so the choice is real while the argument stays controlled.</span><span class="zh" lang="zh-CN"><b>编排式收敛。</b>任意两个特质的组合都收敛到最多三尊预写好的神之一：选择是真的，论点仍然可控。</span></li>
           <li><span class="en" lang="en"><b>Decaying agency.</b> In the last acts the crowd tears the poster down without waiting for the player, and the two-trait ritual can no longer function.</span><span class="zh" lang="zh-CN"><b>能动性衰减。</b>到最后几幕，人群不等玩家就自行撕毁海报，两特质仪式也无法再运转。</span></li>
           <li><span class="en" lang="en"><b>Data-driven Unity architecture.</b> One orchestrator replays six acts of plain data. The design went through a full mid-project redesign and three rounds of playtesting.</span><span class="zh" lang="zh-CN"><b>数据驱动的 Unity 架构。</b>一个调度器回放六幕纯数据。设计经历过一次中期整体重构和三轮试玩迭代。</span></li>
@@ -243,7 +241,7 @@
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
         <figure class="lead-img"><img src="assets/posters/A02.webp" alt="Poster: DIGITAL TWIN" width="1536" height="864" loading="lazy" data-zoom /></figure>
         <p class="en lead" lang="en">A predictive-maintenance and digital-twin platform for a fleet of turbofan engines, built end to end on the public NASA C-MAPSS dataset: data pipeline, model training on Huawei Cloud, an inference API and a 3D web dashboard.</p>
-        <p class="zh lead" lang="zh-CN">为一组涡扇发动机机队搭建的预测性维护与数字孪生平台，基于 NASA C-MAPSS 公开数据集端到端完成：数据流水线、华为云上的模型训练、推理接口，以及 3D 网页大屏。</p>
+        <p class="zh lead" lang="zh-CN">为一支涡扇发动机机队搭建的预测性维护与数字孪生平台，全程基于 NASA C-MAPSS 公开数据集，从头做到尾：数据流水线、华为云上的模型训练、推理接口和 3D 网页大屏。</p>
         <h3><span class="en" lang="en">What I did</span><span class="zh" lang="zh-CN">我做了什么</span></h3>
         <ul class="points">
           <li><span class="en" lang="en"><b>Remaining-useful-life prediction with a Transformer:</b> RMSE 14.93 ± 0.31 under 5-fold time-series cross-validation, the best of three models compared.</span><span class="zh" lang="zh-CN"><b>用 Transformer 预测剩余寿命：</b>5 折时序交叉验证 RMSE 14.93 ± 0.31，对比的三个模型中最优。</span></li>
@@ -267,8 +265,8 @@
         <p class="idx"><span class="en" lang="en">03 · MSc coursework · Newcastle University</span><span class="zh" lang="zh-CN">03 · 硕士课程项目 · 纽卡斯尔大学</span></p>
         <h2 class="banner" id="coursework-title">ENGINE SYSTEMS</h2>
         <p class="sub">
-          <span class="en" lang="en">Four C++ projects, solo and team — physics, AI, networking and rendering.</span>
-          <span class="zh" lang="zh-CN">四个 C++ 项目，独立与团队——物理、AI、网络同步与渲染。</span>
+          <span class="en" lang="en">Four C++ projects, three solo and one in a team of four: physics, AI, networking and rendering.</span>
+          <span class="zh" lang="zh-CN">四个 C++ 项目，三个独立完成、一个四人团队：物理、AI、网络同步与渲染。</span>
         </p>
         <div class="actions">
           <button class="btn btn--open btn--red" type="button" data-open="coursework"><span class="en" lang="en">Read more</span><span class="zh" lang="zh-CN">展开详情</span></button>
@@ -283,8 +281,8 @@
           <div>
             <p class="meta">CSC8503 · 2025.11–12 · <span class="en" lang="en">Solo</span><span class="zh" lang="zh-CN">独立开发</span></p>
             <h3><span class="en" lang="en">Real-time Game Prototype</span><span class="zh" lang="zh-CN">实时游戏原型</span></h3>
-            <p class="en" lang="en">A 3D prototype in C++ on the NCL framework: package-delivery gameplay, ray-cast and spring-constraint object interaction, enemy AI with state machines, behaviour trees and A* pathfinding, and server-authoritative multiplayer with 20 Hz snapshots and client-side interpolation over ENet/UDP.</p>
-            <p class="zh" lang="zh-CN">基于 C++/NCL 框架的 3D 游戏原型：包裹搬运核心玩法，射线检测加弹簧约束的物体交互，状态机、行为树、A* 寻路的敌人 AI，以及服务器权威联机同步（20Hz 快照广播加客户端插值，ENet/UDP）。</p>
+            <p class="en" lang="en">A 3D package-delivery prototype in C++ on the NCL framework. Objects are picked up and carried with ray casts and spring constraints; the enemies run on state machines, behaviour trees and A* pathfinding. Multiplayer is server-authoritative: 20 Hz snapshots over ENet/UDP, interpolated on the client.</p>
+            <p class="zh" lang="zh-CN">基于 C++/NCL 框架的 3D 送包裹游戏原型。用射线检测加弹簧约束来抓取和搬运物体；敌人由状态机、行为树和 A* 寻路驱动；联机是服务器权威同步，20Hz 快照经 ENet/UDP 广播，客户端做插值。</p>
             <div class="yt" data-yt="KzcELEoVv0Y">
               <button class="yt-play" type="button"><span class="en" lang="en">▶ Play demo</span><span class="zh" lang="zh-CN">▶ 播放演示</span></button>
               <a href="https://youtu.be/KzcELEoVv0Y" target="_blank" rel="noopener">YouTube ↗</a>
@@ -298,8 +296,8 @@
           <div>
             <p class="meta">CSC8502 · 2025.10–11 · <span class="en" lang="en">Solo</span><span class="zh" lang="zh-CN">独立开发</span></p>
             <h3><span class="en" lang="en">Real-time Graphics Rendering</span><span class="zh" lang="zh-CN">实时图形渲染</span></h3>
-            <p class="en" lang="en">A real-time scene in NCLGL/OpenGL with Cook-Torrance PBR, IBL pre-computation (irradiance map, prefiltered cubemap, BRDF LUT), HDR tone mapping, water with Fresnel reflection and refraction plus spring-damper buoyancy, and a modular post-processing stack.</p>
-            <p class="zh" lang="zh-CN">基于 NCLGL/OpenGL 的实时 3D 场景，实现 Cook-Torrance PBR、IBL 预计算（辐照度图、预过滤环境图、BRDF LUT）、HDR 色调映射、水体渲染（Fresnel 反射折射加弹簧阻尼浮力），以及模块化后处理。</p>
+            <p class="en" lang="en">A real-time scene in NCLGL/OpenGL. Materials use Cook-Torrance PBR with pre-computed image-based lighting (irradiance map, prefiltered cubemap, BRDF LUT) and HDR tone mapping. The water reflects and refracts with a Fresnel term, and objects float on it with spring-damper buoyancy. Post-processing is a modular stack.</p>
+            <p class="zh" lang="zh-CN">基于 NCLGL/OpenGL 的实时 3D 场景。材质用 Cook-Torrance PBR，配合预计算的图像光照（辐照度图、预过滤环境图、BRDF LUT）和 HDR 色调映射；水面按 Fresnel 项做反射和折射，物体靠弹簧阻尼浮力漂在上面；后处理是模块化的一组。</p>
             <div class="yt" data-yt="3fZ3JEgV65g">
               <button class="yt-play" type="button"><span class="en" lang="en">▶ Play demo</span><span class="zh" lang="zh-CN">▶ 播放演示</span></button>
               <a href="https://youtu.be/3fZ3JEgV65g" target="_blank" rel="noopener">YouTube ↗</a>
@@ -325,7 +323,7 @@
             <p class="meta">CSC8501 · 2025.09–10 · <span class="en" lang="en">Solo</span><span class="zh" lang="zh-CN">独立开发</span></p>
             <h3><span class="en" lang="en">Iterated Prisoner's Dilemma Simulator</span><span class="zh" lang="zh-CN">迭代囚徒困境模拟器</span></h3>
             <p class="en" lang="en">A C++ simulator for multi-strategy tournaments, noise, evolutionary runs and complexity penalties, with a modular strategy interface and a single CLI that writes text, CSV or JSON.</p>
-            <p class="zh" lang="zh-CN">C++ 迭代囚徒困境模拟器，支持多策略锦标赛、噪声扰动、演化模拟与复杂度惩罚分析；模块化策略接口，统一命令行，可输出 text/CSV/JSON。</p>
+            <p class="zh" lang="zh-CN">用 C++ 写的模拟器，支持多策略锦标赛、噪声扰动、演化模拟和复杂度惩罚分析；策略接口模块化，一个命令行入口，可输出 text、CSV 或 JSON。</p>
             <p class="links"><a href="https://github.com/white048/CSC8501" target="_blank" rel="noopener">GitHub ↗</a></p>
           </div>
         </article>
@@ -380,8 +378,8 @@
         <button class="panel-close" type="button" data-close aria-label="Close / 关闭">×</button>
         <p class="en lead" lang="en">I'm Dong Yijun, a game designer and engineer. I completed the MSc in Computer Game Engineering at Newcastle University with Distinction. My dissertation game, <em>Until They Forget</em>, turns a cognitive-bias brief into a narrative in which the player becomes the propagandist, and I'm preparing it for Steam.</p>
         <p class="en" lang="en">I work across C++ engine systems (physics, AI, networking, PBR rendering), data-driven Unity architecture and web 3D, most recently a digital-twin platform during my Huawei internship. I'm interested in games as instruments for reflection, and in the research questions behind them.</p>
-        <p class="zh lead" lang="zh-CN">我是董一均，游戏设计师与工程师，以 Distinction（优异）成绩完成了纽卡斯尔大学计算机游戏工程硕士学业。毕业设计《Until They Forget》把"认知偏差训练"的命题做成了一部让玩家亲手成为宣传者的叙事游戏，正在筹备上架 Steam。</p>
-        <p class="zh" lang="zh-CN">技术上我横跨 C++ 引擎系统（物理、AI、网络同步、PBR 渲染）、数据驱动的 Unity 架构与 Web 3D，最近一次是华为实习中的数字孪生平台。我关心游戏作为反思工具的可能性，以及它背后的研究问题。</p>
+        <p class="zh lead" lang="zh-CN">我是董一均，游戏设计师与工程师，以 Distinction（优异）成绩完成了纽卡斯尔大学计算机游戏工程硕士学业。毕业设计《Until They Forget》把“认知偏差训练”的命题做成了一部让玩家亲手当上宣传者的叙事游戏，正在筹备上架 Steam。</p>
+        <p class="zh" lang="zh-CN">技术上我做过 C++ 引擎系统（物理、AI、网络同步、PBR 渲染）、数据驱动的 Unity 架构和 Web 3D，最近的一个是华为实习里的数字孪生平台。我关心游戏能不能成为让人反思的工具，也关心这背后的研究问题。</p>
 
         <h3><span class="en" lang="en">Education</span><span class="zh" lang="zh-CN">教育背景</span></h3>
         <dl class="facts">
@@ -446,7 +444,7 @@
     <span class="cue-mouse"><i></i></span>
     <span class="cue-swipe"><i></i></span>
     <span class="cue-text">
-      <span class="cue-fine"><span class="en" lang="en">Scroll the mouse wheel to climb the tower</span><span class="zh" lang="zh-CN">滚动鼠标滚轮，沿螺旋楼梯向上</span></span>
+      <span class="cue-fine"><span class="en" lang="en">Scroll to climb the tower</span><span class="zh" lang="zh-CN">滚动滚轮，沿螺旋楼梯向上</span></span>
       <span class="cue-coarse"><span class="en" lang="en">Swipe up to climb the tower</span><span class="zh" lang="zh-CN">手指上滑，沿螺旋楼梯向上</span></span>
       <small class="cue-fine"><span class="en" lang="en">or press ↓ to jump a floor</span><span class="zh" lang="zh-CN">也可以按 ↓ 键逐层跳转</span></small>
     </span>
